@@ -57,9 +57,12 @@ dependencies {
     kapt deps.glidecompiler
     api deps.dynamicanimation
 
-    //sdk依赖项（common下是通用功能，其他包也可以）
+    //sdk依赖项（common下是通用功能，其他包也可以）deps.aircraft
     compileOnly deps.allProvided
     compileOnly deps.all
+
+//    compileOnly deps.aircraftProvided
+//    compileOnly deps.aircraft
 
     //网络库的依赖项
     runtimeOnly deps.networkImp
