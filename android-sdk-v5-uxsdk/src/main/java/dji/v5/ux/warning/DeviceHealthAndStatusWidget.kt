@@ -1,6 +1,8 @@
 package dji.v5.ux.warning
 
+import android.annotation.SuppressLint
 import android.content.Context
+import android.graphics.Color
 import android.graphics.Outline
 import android.graphics.PostProcessor
 import android.util.AttributeSet
@@ -119,6 +121,7 @@ open class DeviceHealthAndStatusWidget @JvmOverloads constructor(
             heightDimension = WidgetSizeDescription.Dimension.EXPAND
         )
 
+    @SuppressLint("ResourceAsColor")
     private fun updateDisplayMessage() {
         widgetModel.deviceMessageProcessor.value.let {
             if (it.isNotEmpty()) {
@@ -137,9 +140,12 @@ open class DeviceHealthAndStatusWidget @JvmOverloads constructor(
                 tvNoMessage.visibility = VISIBLE
                 tvWarningMessage.visibility = GONE
                 if (!widgetModel.isConnectedProcessor.value) {
-                    tvNoMessage.text = "N/A"
+//                    tvNoMessage.text = "N/A"
+                    tvNoMessage.text = "飞行器未连接"
+                    tvNoMessage.setTextColor(Color.RED)
                 } else {
                     tvNoMessage.text = AndUtil.getResString(R.string.uxsdk_fpv_message_box_empty_content_v2)
+                    tvNoMessage.setTextColor(R.color.uxsdk_white_70_percent)
                 }
                 popover?.let { p ->
                     p.builder.anchor = tvNoMessage

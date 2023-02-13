@@ -22,6 +22,19 @@ android {
     kotlinOptions{
         jvmTarget = JavaVersion.VERSION_1_8
     }
+    buildFeatures {
+        viewBinding true
+    }
+    buildTypes {
+        release {
+            buildConfigField("String", "ARCGIS_API_KEY", "\"${project.ARCGIS_API_KEY}\"")
+        }
+
+        debug {
+            buildConfigField("String", "ARCGIS_API_KEY", "\"${project.ARCGIS_API_KEY}\"")
+        }
+    }
+
 }
 
 dependencies {
@@ -47,6 +60,7 @@ dependencies {
     implementation deps.mikepenzIconicsViews
     implementation deps.mikepenzIconicsCore
     implementation deps.mikepenzIonicons
+    implementation deps.arcgisruntime
 
     api deps.maplibreAnotation
     api deps.maplibreTurf

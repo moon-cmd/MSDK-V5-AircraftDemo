@@ -50,7 +50,11 @@ android {
         // 与其他库重复引用了，因此选其中一个即可
         pickFirst 'lib/arm64-v8a/libc++_shared.so'
         pickFirst 'lib/armeabi-v7a/libc++_shared.so'
+        exclude 'META-INF/DEPENDENCIES'
     }
+//    packagingOptions {
+//        exclude 'META-INF/DEPENDENCIES'
+//    }
 
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_1_8

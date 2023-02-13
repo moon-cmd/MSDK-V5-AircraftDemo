@@ -222,7 +222,7 @@
             app:layout_constraintStart_toEndOf="@id/widget_take_off"
             app:layout_constraintTop_toBottomOf="@id/widget_remaining_flight_time" />
 
-        <dji.v5.ux.flight.returnhome.ReturnHomeWidget
+        <dji.v5.ux.mapkit.core.callback.returnhome.ReturnHomeWidget
             android:id="@+id/widget_return_to_home"
             android:layout_width="0dp"
             android:layout_height="0dp"

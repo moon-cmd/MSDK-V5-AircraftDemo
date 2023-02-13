@@ -725,7 +725,7 @@ class LiveStreamFragment:DJIFragment(), View.OnClickListener,SurfaceHolder.Callb
         }
     }
 
-    override fun surfaceCreated(holder: SurfaceHolder?) {
+    override fun surfaceCreated(holder: SurfaceHolder) {
         //重新创建的时候销毁openGL
 //        videoDecoder?.let {
 //            it.destory()
@@ -759,7 +759,7 @@ class LiveStreamFragment:DJIFragment(), View.OnClickListener,SurfaceHolder.Callb
         curHeight = surfaceView.height
     }
 
-    override fun surfaceChanged(holder: SurfaceHolder?, format: Int, width: Int, height: Int) {
+    override fun surfaceChanged(holder: SurfaceHolder, format: Int, width: Int, height: Int) {
         if (videoDecoder == null) {
             videoDecoder = VideoDecoder(
                 this@LiveStreamFragment.context,
@@ -777,7 +777,7 @@ class LiveStreamFragment:DJIFragment(), View.OnClickListener,SurfaceHolder.Callb
         curHeight = height
     }
 
-    override fun surfaceDestroyed(holder: SurfaceHolder?) {
+    override fun surfaceDestroyed(holder: SurfaceHolder) {
         videoDecoder?.let {
             videoDecoder?.onPause()
         }

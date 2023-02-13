@@ -54,6 +54,7 @@ public class Mapkit {
         } catch (PackageManager.NameNotFoundException e) {
             LogUtils.e(TAG, e.getMessage());
         }
+
     }
 
     /**

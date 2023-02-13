@@ -169,6 +169,8 @@ open class TopBarPanelWidget @JvmOverloads constructor(
         }
         addLeftWidgets(leftPanelItems.toTypedArray())
 
+
+
         val rightPanelItems = ArrayList<PanelItem>()
         if (!WidgetValue.DEVICE_HEALTH.isItemExcluded(excludedItemsValue)) {
             deviceHealthAndStatusWidget = DeviceHealthAndStatusWidget(context, attrs)

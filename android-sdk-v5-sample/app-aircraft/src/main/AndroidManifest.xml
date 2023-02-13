@@ -27,7 +27,7 @@
             android:value="${API_KEY}" />
 
         <activity
-            android:name=".MainActivity"
+            android:name=".MainSdkActivity"
             android:exported="true"
             android:screenOrientation="landscape"
             android:theme="@style/full_screen_theme">

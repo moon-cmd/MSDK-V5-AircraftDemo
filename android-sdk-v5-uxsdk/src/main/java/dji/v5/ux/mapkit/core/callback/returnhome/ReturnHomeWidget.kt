@@ -21,7 +21,7 @@
  *
  */
 
-package dji.v5.ux.flight.returnhome
+package dji.v5.ux.mapkit.core.callback.returnhome
 
 import android.annotation.SuppressLint
 import android.content.Context
@@ -51,9 +51,9 @@ import dji.v5.ux.core.ui.SlidingDialog
 import dji.v5.ux.core.util.RxUtil
 import dji.v5.ux.core.util.UnitConversionUtil
 import dji.v5.ux.R
-import dji.v5.ux.flight.returnhome.ReturnHomeWidget.ModelState
-import dji.v5.ux.flight.returnhome.ReturnHomeWidget.ModelState.*
-import dji.v5.ux.flight.returnhome.ReturnHomeWidgetModel.ReturnHomeState
+import dji.v5.ux.mapkit.core.callback.returnhome.ReturnHomeWidget.ModelState
+import dji.v5.ux.mapkit.core.callback.returnhome.ReturnHomeWidget.ModelState.*
+import dji.v5.ux.mapkit.core.callback.returnhome.ReturnHomeWidgetModel.ReturnHomeState
 import java.text.DecimalFormat
 
 private const val TAG = "ReturnHomeWidget"

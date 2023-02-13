@@ -93,7 +93,7 @@ class VideoPlayFragment : DJIFragment(), SurfaceHolder.Callback, View.OnClickLis
         videoPlayVM.removeAllListener()
     }
 
-    override fun surfaceCreated(holder: SurfaceHolder?) {
+    override fun surfaceCreated(holder: SurfaceHolder) {
         if (videoDecoder == null) {
             videoDecoder = createVideoDecoder()
         } else if (videoDecoder?.decoderStatus == DecoderState.PAUSED) {
@@ -102,7 +102,7 @@ class VideoPlayFragment : DJIFragment(), SurfaceHolder.Callback, View.OnClickLis
         videoDecoder?.mediaFile = mediaFile
     }
 
-    override fun surfaceChanged(holder: SurfaceHolder?, format: Int, width: Int, height: Int) {
+    override fun surfaceChanged(holder: SurfaceHolder, format: Int, width: Int, height: Int) {
         if (videoDecoder == null) {
             videoDecoder = createVideoDecoder()
 
@@ -111,7 +111,7 @@ class VideoPlayFragment : DJIFragment(), SurfaceHolder.Callback, View.OnClickLis
         }
     }
 
-    override fun surfaceDestroyed(holder: SurfaceHolder?) {
+    override fun surfaceDestroyed(holder: SurfaceHolder) {
         videoDecoder?.onPause()
     }
 

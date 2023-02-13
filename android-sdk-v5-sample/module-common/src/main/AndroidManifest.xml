@@ -10,4 +10,5 @@
     <meta-data
         android:name="com.amap.api.v2.apikey"
         android:value="${AMAP_API_KEY}" />
+
 </manifest>
