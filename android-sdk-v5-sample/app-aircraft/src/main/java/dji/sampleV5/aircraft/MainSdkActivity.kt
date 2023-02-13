@@ -1,9 +1,7 @@
 package dji.sampleV5.aircraft
 
-import android.content.Context
 import android.graphics.Point
 import android.os.Bundle
-import android.view.Display
 import android.view.View
 import android.view.ViewStub
 import android.view.WindowManager
@@ -11,6 +9,7 @@ import android.widget.RelativeLayout
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.view.GravityCompat
 import androidx.drawerlayout.widget.DrawerLayout
+import dji.sampleV5.modulecommon.util.DensityUtil
 import dji.sampleV5.util.animation.ResizeAnimation
 import dji.sdk.keyvalue.value.common.CameraLensType
 import dji.v5.common.video.channel.VideoChannelState
@@ -97,11 +96,11 @@ open class MainSdkActivity : InitSdkActivity() {
 
     // 地图/视频 切换
     private var isMapMini = true
-    private val height = 0
-    private val width = 0
-    private val margin = 0
-    private val deviceWidth = 0
-    private val deviceHeight = 0
+    private var height = 0
+    private var width = 0
+    private var margin = 0
+    private var deviceWidth = 0
+    private var deviceHeight = 0
 
     //endregion
 
@@ -110,6 +109,20 @@ open class MainSdkActivity : InitSdkActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
+
+        //region 变量初始化
+        height = DensityUtil.dip2px(this, 100F)
+        width = DensityUtil.dip2px(this, 150F)
+        margin = DensityUtil.dip2px(this, 12F)
+
+        val windowManager = getSystemService(WINDOW_SERVICE) as WindowManager
+        val display = windowManager.defaultDisplay
+        val outPoint = Point()
+        display.getRealSize(outPoint)
+        deviceHeight = outPoint.y
+        deviceWidth = outPoint.x
+
+        //endregion
 
         // Setup top bar state callbacks
         val topBarPanel = findViewById<TopBarPanelWidget>(R.id.panel_top_bar)
@@ -144,6 +157,7 @@ open class MainSdkActivity : InitSdkActivity() {
 //            findViewById(R.id.widget_horizontal_situation_indicator)
         mapWidget = findViewById(R.id.widget_map)
         fpvLayout = findViewById(R.id.fpv_holder)
+        mapWidget = findViewById(dji.v5.ux.R.id.widget_map)
 
 //        cameraControlsWidget?.exposureSettingsIndicatorWidget
 //            ?.setStateChangeResourceId(R.id.panel_camera_controls_exposure_settings)
@@ -167,7 +181,7 @@ open class MainSdkActivity : InitSdkActivity() {
         secondaryFPVWidget?.setSurfaceViewZOrderMediaOverlay(true)
 
         // 地图初始化
-        mapWidget = findViewById(dji.v5.ux.R.id.widget_map)
+
 
 //        mapWidget.initAMap(OnMapReadyListener { map: DJIMap ->
 //            // map.setOnMapClickListener(latLng -> onViewClick(mapWidget));
@@ -239,30 +253,33 @@ open class MainSdkActivity : InitSdkActivity() {
 
     //region 视图控件初始化
     private fun initClickListener() {
-        secondaryFPVWidget!!.setOnClickListener { v: View? -> swapVideoSource() }
+        secondaryFPVWidget?.setOnClickListener { v: View? -> swapVideoSource() }
         initChannelStateListener()
-        if (settingWidget != null) {
-            settingWidget!!.setOnClickListener { v: View? -> toggleRightDrawer() }
-        }
 
-        val windowManager = getSystemService(Context.WINDOW_SERVICE) as WindowManager
-        val display: Display = windowManager.defaultDisplay
-        val outPoint = Point()
-        display.getRealSize(outPoint)
-        var deviceHeight = outPoint.y
-        var deviceWidth = outPoint.x
+        settingWidget?.setOnClickListener { v: View? -> toggleRightDrawer() }
 
-        mapWidget?.setOnClickListener{v: View? ->
+        mapWidget?.rootView?.setOnClickListener{v: View? -> onViewClick(mapWidget!!)}
 
-            var rs = getResources()
-            var dm = rs.getDisplayMetrics()
-            if(Math.abs(mapWidget?.height?.minus(dm.heightPixels) ?: 0) > 1){
-                var layoutParams = mapWidget?.getLayoutParams();
-                layoutParams?.width = dm.widthPixels
-                layoutParams?.height = dm.heightPixels
-                mapWidget?.onResume()
-            }
-        }
+        fpvLayout?.setOnClickListener{v: View? -> onViewClick(fpvLayout!!)}
+
+//        val windowManager = getSystemService(Context.WINDOW_SERVICE) as WindowManager
+//        val display: Display = windowManager.defaultDisplay
+//        val outPoint = Point()
+//        display.getRealSize(outPoint)
+//        var deviceHeight = outPoint.y
+//        var deviceWidth = outPoint.x
+//
+//        mapWidget?.setOnClickListener{v: View? ->
+//
+//            var rs = getResources()
+//            var dm = rs.getDisplayMetrics()
+//            if(Math.abs(mapWidget?.height?.minus(dm.heightPixels) ?: 0) > 1){
+//                var layoutParams = mapWidget?.getLayoutParams();
+//                layoutParams?.width = dm.widthPixels
+//                layoutParams?.height = dm.heightPixels
+//                mapWidget?.onResume()
+//            }
+//        }
 
 
     }

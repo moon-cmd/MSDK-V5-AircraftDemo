@@ -32,7 +32,7 @@ public class MapWidget extends ConstraintLayoutWidget<Object> implements View.On
 
     private MapView mapView;
 
-    private View rootView;
+    public View rootView;
 
     public MapWidget(@NonNull Context context, @Nullable AttributeSet attrs, int defStyleAttr) {
         super(context, attrs, defStyleAttr);
