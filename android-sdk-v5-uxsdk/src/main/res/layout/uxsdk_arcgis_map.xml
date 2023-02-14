@@ -8,6 +8,8 @@
     android:background="@android:color/transparent"
     tools:parentTag="dji.v5.ux.arcgis.maps.MapWidget">
 
+
+
     <com.esri.arcgisruntime.mapping.view.MapView
         android:id="@+id/mapView"
         android:layout_width="0dp"
@@ -17,4 +19,34 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 
+    <ImageButton
+        android:id="@+id/btn_mapExpand"
+        android:layout_width="35dp"
+        android:layout_height="35dp"
+        android:padding="5dp"
+        android:layout_marginTop="0dp"
+        android:layout_marginRight="0dp"
+        android:src="@drawable/uxsdk_bg_expand"
+        android:scaleType="centerInside"
+        app:layout_constraintRight_toRightOf="parent"
+        />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:gravity="bottom|center">
+        <Button
+            android:layout_width="@dimen/uxsdk_100_dp"
+            android:layout_height="@dimen/uxsdk_55_dp"
+            android:text="@string/uxsdk_pointFlightMode"
+            android:id="@+id/btn_pointFlightMode"/>
+
+        <Button
+            android:layout_width="@dimen/uxsdk_100_dp"
+            android:layout_height="@dimen/uxsdk_55_dp"
+            android:text="@string/uxsdk_KmlFlightMode"
+            android:layout_marginLeft="@dimen/uxsdk_10_dp"
+            android:id="@+id/btn_KmlFlightMode"/>
+
+    </LinearLayout>
 </merge>

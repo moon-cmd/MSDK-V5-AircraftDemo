@@ -1,11 +1,13 @@
 package dji.sampleV5.aircraft
 
+import android.Manifest
+import android.content.pm.PackageManager
 import android.graphics.Point
 import android.os.Bundle
 import android.view.View
 import android.view.ViewStub
 import android.view.WindowManager
-import android.widget.RelativeLayout
+import android.widget.ImageButton
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.view.GravityCompat
 import androidx.drawerlayout.widget.DrawerLayout
@@ -21,6 +23,7 @@ import dji.v5.manager.account.LoginInfo
 import dji.v5.manager.datacenter.MediaDataCenter
 import dji.v5.utils.common.JsonUtil
 import dji.v5.utils.common.LogUtils
+import dji.v5.utils.common.ToastUtils
 import dji.v5.ux.cameracore.widget.autoexposurelock.AutoExposureLockWidget
 import dji.v5.ux.cameracore.widget.cameracontrols.CameraControlsWidget
 import dji.v5.ux.cameracore.widget.cameracontrols.exposuresettings.ExposureSettingsPanel
@@ -47,7 +50,6 @@ import dji.v5.ux.visualcamera.CameraVisiblePanelWidget
 import dji.v5.ux.visualcamera.zoom.FocalZoomWidget
 import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers
 import io.reactivex.rxjava3.disposables.CompositeDisposable
-import kotlinx.android.synthetic.main.activity_main.*
 import java.util.concurrent.TimeUnit
 
 
@@ -82,7 +84,9 @@ open class MainSdkActivity : InitSdkActivity() {
     private var mDrawerLayout: DrawerLayout? = null
 
     private var fpvLayout: ConstraintLayout? = null
+    private var widgetMainView:  ConstraintLayout? = null
 
+    private var fpvViewExpand: ImageButton? = null
 
     private var compositeDisposable: CompositeDisposable? = null
     private val cameraSourceProcessor = DataProcessor.create(
@@ -108,11 +112,12 @@ open class MainSdkActivity : InitSdkActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        ToastUtils.init(this)
         setContentView(R.layout.activity_main)
 
         //region 变量初始化
-        height = DensityUtil.dip2px(this, 100F)
-        width = DensityUtil.dip2px(this, 150F)
+        height = DensityUtil.dip2px(this, 120F)
+        width = DensityUtil.dip2px(this, 220F)
         margin = DensityUtil.dip2px(this, 12F)
 
         val windowManager = getSystemService(WINDOW_SERVICE) as WindowManager
@@ -158,6 +163,10 @@ open class MainSdkActivity : InitSdkActivity() {
         mapWidget = findViewById(R.id.widget_map)
         fpvLayout = findViewById(R.id.fpv_holder)
         mapWidget = findViewById(dji.v5.ux.R.id.widget_map)
+        widgetMainView = findViewById(R.id.widget_mainView)
+        fpvViewExpand = findViewById(R.id.btn_fpvExpand)
+
+
 
 //        cameraControlsWidget?.exposureSettingsIndicatorWidget
 //            ?.setStateChangeResourceId(R.id.panel_camera_controls_exposure_settings)
@@ -196,6 +205,7 @@ open class MainSdkActivity : InitSdkActivity() {
 //            //uiSetting?.setTiltGesturesEnabled(true)
 //        })
 
+        mapWidget?.widgetModel = getProductInstance()
         mapWidget?.initMap()
         mapWidget?.onCreate(savedInstanceState)
     }
@@ -258,30 +268,9 @@ open class MainSdkActivity : InitSdkActivity() {
 
         settingWidget?.setOnClickListener { v: View? -> toggleRightDrawer() }
 
-        mapWidget?.rootView?.setOnClickListener{v: View? -> onViewClick(mapWidget!!)}
+        mapWidget?.setMapWidgetListener{v: View? -> onViewClick(mapWidget!!)}
 
-        fpvLayout?.setOnClickListener{v: View? -> onViewClick(fpvLayout!!)}
-
-//        val windowManager = getSystemService(Context.WINDOW_SERVICE) as WindowManager
-//        val display: Display = windowManager.defaultDisplay
-//        val outPoint = Point()
-//        display.getRealSize(outPoint)
-//        var deviceHeight = outPoint.y
-//        var deviceWidth = outPoint.x
-//
-//        mapWidget?.setOnClickListener{v: View? ->
-//
-//            var rs = getResources()
-//            var dm = rs.getDisplayMetrics()
-//            if(Math.abs(mapWidget?.height?.minus(dm.heightPixels) ?: 0) > 1){
-//                var layoutParams = mapWidget?.getLayoutParams();
-//                layoutParams?.width = dm.widthPixels
-//                layoutParams?.height = dm.heightPixels
-//                mapWidget?.onResume()
-//            }
-//        }
-
-
+        fpvViewExpand?.setOnClickListener{v: View? -> onViewClick(fpvLayout!!)}
     }
 
     private fun toggleRightDrawer() {
@@ -492,28 +481,38 @@ open class MainSdkActivity : InitSdkActivity() {
 
     //region 其它方法
 
+    //region 地图 - 视频 视图切换
+
     private fun onViewClick(view: View) {
+        // 显示视频视图
         if ((view === fpvLayout) && !isMapMini) {
             resizeFPVWidget(
 
-                RelativeLayout.LayoutParams.MATCH_PARENT,
-                RelativeLayout.LayoutParams.MATCH_PARENT,
+                ConstraintLayout.LayoutParams.MATCH_PARENT,
+                ConstraintLayout.LayoutParams.MATCH_PARENT,
                 0,
                 0
             )
-//            reorderCameraCapturePanel()
             val mapViewAnimation =
                 ResizeAnimation(mapWidget!!, deviceWidth, deviceHeight, width, height, margin)
             mapWidget!!.startAnimation(mapViewAnimation)
             isMapMini = true
-        } else if (view === mapWidget && isMapMini) {
-//            hidePanels()
-            resizeFPVWidget(width, height, margin, 12)
-//            reorderCameraCapturePanel()
+            // 缩放按钮显示/隐藏
+            mapWidget?.imageButton?.visibility = View.VISIBLE
+            fpvViewExpand?.visibility = View.GONE
+
+        }
+        // 显示地图视图
+        else if (view === mapWidget && isMapMini) {
+            resizeFPVWidget(width, height, margin, 1)
             val mapViewAnimation =
                 ResizeAnimation(mapWidget!!, width, height, deviceWidth, deviceHeight, 0)
             mapWidget!!.startAnimation(mapViewAnimation)
             isMapMini = false
+            // 缩放按钮显示/隐藏
+            mapWidget?.imageButton?.visibility = View.GONE
+            fpvViewExpand?.visibility = View.VISIBLE
+
         }
     }
 
@@ -521,29 +520,67 @@ open class MainSdkActivity : InitSdkActivity() {
         val fpvParams = fpvLayout?.getLayoutParams() as? ConstraintLayout.LayoutParams
         fpvParams?.height = height
         fpvParams?.width = width
-        fpvParams?.rightMargin = margin
-        fpvParams?.bottomMargin = margin
-        if (isMapMini) {
-            fpvParams?.bottomToBottom = R.id.root_view
-            fpvParams?.startToStart = R.id.root_view
 
-//            fpvParams.addRule(RelativeLayout.CENTER_IN_PARENT, 0)
-//            fpvParams.addRule(RelativeLayout.ALIGN_PARENT_RIGHT, RelativeLayout.TRUE)
-//            fpvParams.addRule(RelativeLayout.ALIGN_PARENT_BOTTOM, RelativeLayout.TRUE)
-        } else {
-//            fpvParams.addRule(RelativeLayout.ALIGN_PARENT_RIGHT, 0)
-//            fpvParams.addRule(RelativeLayout.ALIGN_PARENT_BOTTOM, 0)
-//            fpvParams.addRule(RelativeLayout.CENTER_IN_PARENT, RelativeLayout.TRUE)
-            fpvParams?.bottomToBottom = R.id.root_view
-            fpvParams?.endToEnd = R.id.root_view
+        // 显示地图，缩小视频窗口
+        if (isMapMini) {
+
+            fpvParams?.topToTop =  ConstraintLayout.LayoutParams.UNSET
+            fpvParams?.endToEnd = ConstraintLayout.LayoutParams.UNSET
+            fpvParams?.startToStart = R.id.root_view
+            fpvParams?.bottomToBottom = R.id.widget_mainView
+
+        }
+        // 显示视频窗口，缩小地图窗口
+        else {
+            fpvParams?.startToStart =  ConstraintLayout.LayoutParams.UNSET
+            fpvParams?.bottomToBottom = ConstraintLayout.LayoutParams.UNSET
             fpvParams?.topToTop = R.id.root_view
+            fpvParams?.endToEnd = R.id.root_view
 
         }
         fpvLayout?.setLayoutParams(fpvParams)
-        root_view.removeView(fpvLayout)
-        root_view.addView(fpvLayout, fpvInsertPosition)
+
+        widgetMainView?.removeView(fpvLayout)
+//        fpvLayout?.setOnClickListener{v: View? -> onViewClick(fpvLayout!!)}
+        widgetMainView?.addView(fpvLayout, fpvInsertPosition)
     }
 
+    //endregion
+
+    // region 设备定位
+
+    /**
+     * 权限
+     *
+     */
+    override fun onRequestPermissionsResult(
+        requestCode: Int,
+        permissions: Array<out String>,
+        grantResults: IntArray
+    ) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+
+        // 开启定位
+        if (grantResults.isEmpty() ||
+            grantResults[0] != PackageManager.PERMISSION_GRANTED ||
+            (Manifest.permission.ACCESS_FINE_LOCATION !in permissions) ||
+            (Manifest.permission.ACCESS_COARSE_LOCATION !in permissions)) {
+
+            ToastUtils.showToast("定位未开启或没有权限")
+            LogUtils.e("定位权限未开启")
+
+        }else{
+            mapWidget?.startLocation(requestCode, permissions, grantResults)
+        }
+
+    }
+
+    //endregion
+
+    // region 飞机定位
+
+
+    //endregion
 
     //endregion
 }

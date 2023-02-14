@@ -20,6 +20,9 @@ import dji.v5.manager.interfaces.SDKManagerCallback
 import dji.v5.utils.common.LogUtils
 import dji.v5.utils.common.PermissionUtil
 import dji.v5.utils.common.ToastUtils
+import dji.v5.ux.core.base.DJISDKModel
+import dji.v5.ux.core.communication.ObservableInMemoryKeyedStore
+import dji.v5.ux.map.MapWidgetModel
 
 /**
  * MSDK 注册激活
@@ -43,6 +46,7 @@ abstract class InitSdkActivity : AppCompatActivity(){
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        ToastUtils.init(this)
 
         window.decorView.apply {
             systemUiVisibility =
@@ -154,6 +158,17 @@ abstract class InitSdkActivity : AppCompatActivity(){
         super.onDestroy()
 
         ToastUtils.destroy()
+    }
+
+
+    /**
+     * 连接飞机信息获取
+     */
+    open fun getProductInstance(): MapWidgetModel? {
+        return MapWidgetModel(
+            DJISDKModel.getInstance(),
+            ObservableInMemoryKeyedStore.getInstance()
+        );
     }
 
 

@@ -838,6 +838,12 @@
     <string name="uxsdk_fpv_message_box_empty_content_v2">当前正常</string>
     <string name="uxsdk_fpv_tip_remote_disconnect">飞行器未连接</string>
 
+
+    <string name="uxsdk_location_permission_denied">定位未开启</string>
+    <string name="uxsdk_pointFlightMode">定点飞行</string>
+    <string name="uxsdk_KmlFlightMode">加载KML</string>
+
+
 </resources>
 
 

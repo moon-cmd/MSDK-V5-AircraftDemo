@@ -835,4 +835,10 @@
     <string name="uxsdk_fpv_message_box_empty_content_v2">Normal</string>
     <string name="uxsdk_fpv_tip_remote_disconnect">Aircraft not connected</string>
 
+
+    <string name="uxsdk_location_permission_denied">location not allow</string>
+    <string name="uxsdk_pointFlightMode">Point Flight</string>
+    <string name="uxsdk_KmlFlightMode">Import KML</string>
+
+
 </resources>
