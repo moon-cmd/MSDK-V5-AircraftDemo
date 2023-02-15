@@ -80,7 +80,7 @@
         </androidx.constraintlayout.widget.ConstraintLayout>
 
         <!-- 地图 -->
-        <dji.v5.ux.arcgis.maps.MapWidget
+        <dji.sampleV5.map.ArcGISMapWidget
             android:id="@+id/widget_map"
             android:layout_width="@dimen/uxsdk_220_dp"
             android:layout_height="@dimen/uxsdk_120_dp"

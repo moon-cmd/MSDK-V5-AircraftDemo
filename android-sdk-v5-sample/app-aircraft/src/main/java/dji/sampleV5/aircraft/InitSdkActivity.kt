@@ -10,6 +10,7 @@ import android.view.View
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
+import dji.sampleV5.moduleaircraft.models.WayPointV3VM
 import dji.sampleV5.modulecommon.models.LoginVM
 import dji.v5.common.callback.CommonCallbacks
 import dji.v5.common.error.IDJIError
@@ -34,6 +35,7 @@ abstract class InitSdkActivity : AppCompatActivity(){
     protected val loginVM: LoginVM by viewModels()
     var mainHandler = Handler(Looper.getMainLooper())
     open var userInfo: LoginInfo? = null
+
 
     private val permissionArray = arrayOf(
         Manifest.permission.READ_EXTERNAL_STORAGE,

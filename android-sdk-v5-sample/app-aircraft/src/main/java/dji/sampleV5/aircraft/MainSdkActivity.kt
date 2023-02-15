@@ -8,11 +8,17 @@ import android.view.View
 import android.view.ViewStub
 import android.view.WindowManager
 import android.widget.ImageButton
+import androidx.activity.viewModels
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.view.GravityCompat
 import androidx.drawerlayout.widget.DrawerLayout
+import androidx.fragment.app.Fragment
+import androidx.fragment.app.activityViewModels
+import dji.sampleV5.map.ArcGISMapWidget
+import dji.sampleV5.moduleaircraft.models.WayPointV3VM
 import dji.sampleV5.modulecommon.util.DensityUtil
-import dji.sampleV5.util.animation.ResizeAnimation
+import dji.sampleV5.util.KmzManager
+import dji.sampleV5.util.ResizeAnimation
 import dji.sdk.keyvalue.value.common.CameraLensType
 import dji.v5.common.video.channel.VideoChannelState
 import dji.v5.common.video.channel.VideoChannelType
@@ -54,9 +60,9 @@ import java.util.concurrent.TimeUnit
 
 
 /**
- * 主界面：定点飞行，kmz航线飞行，mmpk加载
+ * 主界面：定点飞行，kmz航线飞行，mmpk加载,飞行时显示高度等信息，确认后飞行
  */
-open class MainSdkActivity : InitSdkActivity() {
+open class MainSdkActivity : InitSdkActivity(){
 
     //region 属性
 
@@ -79,7 +85,7 @@ open class MainSdkActivity : InitSdkActivity() {
     private var visualCameraPanel: CameraVisiblePanelWidget? = null
     private var focalZoomWidget: FocalZoomWidget? = null
     private var settingWidget: SettingWidget? = null
-    private var mapWidget: dji.v5.ux.arcgis.maps.MapWidget? = null
+    private var mapWidget: ArcGISMapWidget? = null
     private var mSettingPanelWidget: SettingPanelWidget? = null
     private var mDrawerLayout: DrawerLayout? = null
 
@@ -107,6 +113,8 @@ open class MainSdkActivity : InitSdkActivity() {
     private var deviceHeight = 0
 
     //endregion
+
+    private val wayPointV3VM: WayPointV3VM by viewModels()
 
     //region 声明周期
 
@@ -205,9 +213,8 @@ open class MainSdkActivity : InitSdkActivity() {
 //            //uiSetting?.setTiltGesturesEnabled(true)
 //        })
 
-        mapWidget?.widgetModel = getProductInstance()
-        mapWidget?.initMap()
-        mapWidget?.onCreate(savedInstanceState)
+        mapWidget?.setWidgetModel(getProductInstance())
+
     }
 
     override fun onResume() {
@@ -268,9 +275,15 @@ open class MainSdkActivity : InitSdkActivity() {
 
         settingWidget?.setOnClickListener { v: View? -> toggleRightDrawer() }
 
-        mapWidget?.setMapWidgetListener{v: View? -> onViewClick(mapWidget!!)}
+        mapWidget?.setExpandMapClickListener{v: View? -> onViewClick(mapWidget!!)}
 
         fpvViewExpand?.setOnClickListener{v: View? -> onViewClick(fpvLayout!!)}
+
+        mapWidget?.setLoadKmlClickListener { v: View? ->
+
+            var kmzManagerEvent = KmzManager()
+            kmzManagerEvent.parseWPML()
+        }
     }
 
     private fun toggleRightDrawer() {
@@ -498,7 +511,7 @@ open class MainSdkActivity : InitSdkActivity() {
             mapWidget!!.startAnimation(mapViewAnimation)
             isMapMini = true
             // 缩放按钮显示/隐藏
-            mapWidget?.imageButton?.visibility = View.VISIBLE
+            mapWidget?.minimizedMap(false)
             fpvViewExpand?.visibility = View.GONE
 
         }
@@ -510,7 +523,7 @@ open class MainSdkActivity : InitSdkActivity() {
             mapWidget!!.startAnimation(mapViewAnimation)
             isMapMini = false
             // 缩放按钮显示/隐藏
-            mapWidget?.imageButton?.visibility = View.GONE
+            mapWidget?.minimizedMap(true)
             fpvViewExpand?.visibility = View.VISIBLE
 
         }
@@ -547,7 +560,7 @@ open class MainSdkActivity : InitSdkActivity() {
 
     //endregion
 
-    // region 设备定位
+    // region 设备定位,权限检查
 
     /**
      * 权限
@@ -569,10 +582,7 @@ open class MainSdkActivity : InitSdkActivity() {
             ToastUtils.showToast("定位未开启或没有权限")
             LogUtils.e("定位权限未开启")
 
-        }else{
-            mapWidget?.startLocation(requestCode, permissions, grantResults)
         }
-
     }
 
     //endregion
