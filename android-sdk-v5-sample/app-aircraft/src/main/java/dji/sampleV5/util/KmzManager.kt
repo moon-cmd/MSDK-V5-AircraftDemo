@@ -6,10 +6,13 @@ import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.LifecycleOwner
 import dji.sampleV5.moduleaircraft.data.FlightControlState
 import dji.sampleV5.moduleaircraft.models.WayPointV3VM
+import dji.sdk.keyvalue.key.FlightControllerKey
+import dji.sdk.keyvalue.key.KeyTools
 import dji.sdk.wpmz.jni.JNIWPMZManager
 import dji.sdk.wpmz.value.mission.WaylineExecuteWaypoint
 import dji.v5.common.callback.CommonCallbacks
 import dji.v5.common.error.IDJIError
+import dji.v5.manager.KeyManager
 import dji.v5.manager.aircraft.waypoint3.WPMZParserManager
 import dji.v5.manager.aircraft.waypoint3.model.WaypointMissionExecuteState
 import dji.v5.utils.common.*
@@ -18,6 +21,7 @@ import io.reactivex.rxjava3.core.Single
 import io.reactivex.rxjava3.schedulers.Schedulers
 import org.dom4j.Document
 import org.dom4j.Element
+import org.dom4j.XPath
 import org.dom4j.io.SAXReader
 import java.io.File
 /***
@@ -42,19 +46,28 @@ class KmzManager : KmzManagerEvent, Fragment{
         ContextUtil.getContext(),
         WAYPOINT_SAMPLE_FILE_DIR + WAYPOINT_SAMPLE_FILE_NAME
     )
+
+    // 模板文件
+    private var templateFilePath: String = ""
+    // 执行文件
+    private var waylineFilePath: String = ""
+
     // 航线转态
     var curMissionExecuteState: WaypointMissionExecuteState? = null
 
     var selectWaylines: ArrayList<Int> = ArrayList()
 
+    // 飞行高度
+    var flightHeight: Double = 100.0
+    // 飞行速度
+    var flightSpeed: Double = 5.0
 
     // 飞行状态信息：航高、位置...
     public var flightStateInfo:  FlightControlState? = null
 
 
     constructor( ){
-
-
+        initKmzFile()
     }
 
 
@@ -83,6 +96,8 @@ class KmzManager : KmzManagerEvent, Fragment{
                 destPath
             )
         }
+        val unzipFolder = File(rootDir, unzipChildDir)
+        WPMZParserManager.unZipFolder(ContextUtil.getContext(), curMissionPath, unzipFolder.path, false)
 
     }
 
@@ -257,7 +272,7 @@ class KmzManager : KmzManagerEvent, Fragment{
     public fun parseWPML(){
         val waypointFile = File(curMissionPath)
         if (!waypointFile.exists()) {
-            ToastUtils.showToast("Please upload kmz file")
+            ToastUtils.showToast("未找到航线文件")
             return
         }
 
@@ -269,11 +284,23 @@ class KmzManager : KmzManagerEvent, Fragment{
 //        val reader = SAXReader()
 //        val document: Document = reader.read(File("input.xml"))
         val reader = SAXReader()
-        val document: Document = reader.read(templateFile)
+        val document: Document = reader.read(waylineFile)
         val root: Element = document.rootElement
-        var c = document.xmlEncoding
+        // 查找节点
+        var map = HashMap<String, String>()
+        map.put("xmlns", document.rootElement.namespaceURI)
+        var filter = document.createXPath("//xmlns:Point")
+        filter.setNamespaceURIs(map)
+        var nodes = filter.selectNodes(document)
+        var s = ""
+//        XmlNamespaceManager m = new XmlNamespaceManager(xmlDoc.NameTable);　　　
+//
+//        ————添加命名空间　
+//        m.AddNamespace("fuck", "http://www.google.com/schemas/sitemap/0.84");      　
+
 //        val memberElm: Element = root.element("member") // "member"是节点名
 
+        root.elementIterator("")
 //        String text=memberElm.getText();
 //        String text=root.elementText("name");
 //        ageElm.setText("29");
@@ -317,5 +344,52 @@ class KmzManager : KmzManagerEvent, Fragment{
         return error.errorCode()
     }
 
+    /**
+     * 设置仿地飞行
+     */
+    fun setTerrainFollowMode(){
+
+        KeyManager.getInstance().setValue(KeyTools.createKey(FlightControllerKey.KeyTerrainFollowModeEnabled),
+            true,
+            object: CommonCallbacks.CompletionCallback{
+                override fun onSuccess() {
+                    // 设置成功
+                }
+
+                override fun onFailure(error: IDJIError) {
+                    // 设置失败
+                }
+
+            });
+    }
+
+    fun addFlightPoint(lat: Double, lng: Double, height: Double?){
+        var  waylineFile = File(waylineFilePath)
+        if (!waylineFile.exists()) {
+            ToastUtils.showToast("航线文件不存在")
+            return
+        }
+        val reader = SAXReader()
+        val document: Document = reader.read(waylineFile)
+
+        // Point
+        //      coordinates
+        // wpml:index
+        // wpml:executeHeight
+        // wpml:waypointSpeed
+        // wpml:waypointHeadingParam
+        //      wpml:waypointHeadingMode
+        // 飞行器偏航角模式,followWayline：沿航线方向。飞行器机头沿着航线方向飞至下一航点;
+        //               manually：手动控制。飞行器在飞至下一航点的过程中，用户可以手动控制飞行器机头朝向
+        //               fixed：锁定当前偏航角。飞行器机头保持执行完航点动作后的飞行器偏航角飞至下一航点
+        //               smoothTransition：自定义。通过“wpml:waypointHeadingAngle”给定某航点的目标偏航角，并在航段飞行过程中均匀过渡至下一航点的目标偏航角。
+        //      wpml:waypointHeadingAngle
+        //      wpml:waypointPoiPoint
+        //      wpml:waypointHeadingAngleEnable
+        // wpml:waypointTurnParam
+        //      wpml:waypointTurnMode
+        //      wpml:waypointTurnDampingDist
+        //      wpml:useStraightLine
+    }
 }
 
