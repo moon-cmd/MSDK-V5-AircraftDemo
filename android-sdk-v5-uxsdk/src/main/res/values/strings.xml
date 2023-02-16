@@ -837,8 +837,11 @@
 
 
     <string name="uxsdk_location_permission_denied">location not allow</string>
-    <string name="uxsdk_pointFlightMode">Point Flight</string>
     <string name="uxsdk_KmlFlightMode">Import KML</string>
+    <string name="uxsdk_flight_point">Flight Point</string>
+    <string name="uxsdk_delete_flight_point">Delete Flight Point</string>
+    <string name="uxsdk_cancel_flight_point">Return</string>
+    <string name="uxsdk_add_flight_point">Add Flight Point</string>
 
 
 </resources>

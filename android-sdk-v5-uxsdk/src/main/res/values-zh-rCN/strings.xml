@@ -840,8 +840,11 @@
 
 
     <string name="uxsdk_location_permission_denied">定位未开启</string>
-    <string name="uxsdk_pointFlightMode">航点飞行</string>
     <string name="uxsdk_KmlFlightMode">加载KML</string>
+    <string name="uxsdk_flight_point">飞到此处</string>
+    <string name="uxsdk_delete_flight_point">删除航点</string>
+    <string name="uxsdk_cancel_flight_point">返回</string>
+    <string name="uxsdk_add_flight_point">添加航点</string>
 
 
 </resources>

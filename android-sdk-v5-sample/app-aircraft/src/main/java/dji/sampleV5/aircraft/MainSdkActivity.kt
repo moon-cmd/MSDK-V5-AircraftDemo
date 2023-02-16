@@ -116,7 +116,9 @@ open class MainSdkActivity : InitSdkActivity(){
 
     private val wayPointV3VM: WayPointV3VM by viewModels()
 
-    //region 声明周期
+    private var kmzManager:KmzManager? = null
+
+    //region 生命周期
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -156,18 +158,7 @@ open class MainSdkActivity : InitSdkActivity(){
         secondaryFPVWidget = findViewById(R.id.widget_secondary_fpv)
         systemStatusListPanelWidget = findViewById(R.id.widget_panel_system_status_list)
         simulatorControlWidget = findViewById(R.id.widget_simulator_control)
-//        lensControlWidget = findViewById(R.id.widget_lens_control)
-//        ndviCameraPanel = findViewById(R.id.panel_ndvi_camera)
-//        visualCameraPanel = findViewById(R.id.panel_visual_camera)
-//        autoExposureLockWidget = findViewById(R.id.widget_auto_exposure_lock)
-//        focusModeWidget = findViewById(R.id.widget_focus_mode)
-//        focusExposureSwitchWidget = findViewById(R.id.widget_focus_exposure_switch)
-//        exposureSettingsPanel = findViewById(R.id.panel_camera_controls_exposure_settings)
         pfvFlightDisplayWidget = findViewById(R.id.widget_fpv_flight_display_widget)
-//        focalZoomWidget = findViewById(R.id.widget_focal_zoom)
-//        cameraControlsWidget = findViewById(R.id.widget_camera_controls)
-//        horizontalSituationIndicatorWidget =
-//            findViewById(R.id.widget_horizontal_situation_indicator)
         mapWidget = findViewById(R.id.widget_map)
         fpvLayout = findViewById(R.id.fpv_holder)
         mapWidget = findViewById(dji.v5.ux.R.id.widget_map)
@@ -179,6 +170,9 @@ open class MainSdkActivity : InitSdkActivity(){
 //        cameraControlsWidget?.exposureSettingsIndicatorWidget
 //            ?.setStateChangeResourceId(R.id.panel_camera_controls_exposure_settings)
         initClickListener()
+        kmzManager = KmzManager(wayPointV3VM, this)
+        mapWidget?.kmzManager = kmzManager
+
         MediaDataCenter.getInstance().videoStreamManager.addStreamSourcesListener { sources: List<StreamSource>? ->
             runOnUiThread { updateFPVWidgetSource(sources) }
         }
@@ -214,6 +208,7 @@ open class MainSdkActivity : InitSdkActivity(){
 //        })
 
         mapWidget?.setWidgetModel(getProductInstance())
+        mapWidget?.activityContext = this
 
     }
 
@@ -281,8 +276,8 @@ open class MainSdkActivity : InitSdkActivity(){
 
         mapWidget?.setLoadKmlClickListener { v: View? ->
 
-            var kmzManagerEvent = KmzManager()
-            kmzManagerEvent.parseWPML()
+//            var kmzManagerEvent = KmzManager()
+//            kmzManagerEvent.addFlightPoint(10.0,34.0, null)
         }
     }
 
@@ -423,34 +418,6 @@ open class MainSdkActivity : InitSdkActivity(){
         //只在fpv下显示
         pfvFlightDisplayWidget!!.visibility =
             if (devicePosition == PhysicalDevicePosition.NOSE) View.VISIBLE else View.INVISIBLE
-
-        //fpv下不显示
-//        lensControlWidget!!.visibility =
-//            if (devicePosition == PhysicalDevicePosition.NOSE) View.INVISIBLE else View.VISIBLE
-//        ndviCameraPanel!!.visibility =
-//            if (devicePosition == PhysicalDevicePosition.NOSE) View.INVISIBLE else View.VISIBLE
-//        visualCameraPanel!!.visibility =
-//            if (devicePosition == PhysicalDevicePosition.NOSE) View.INVISIBLE else View.VISIBLE
-//        autoExposureLockWidget!!.visibility =
-//            if (devicePosition == PhysicalDevicePosition.NOSE) View.INVISIBLE else View.VISIBLE
-//        focusModeWidget!!.visibility =
-//            if (devicePosition == PhysicalDevicePosition.NOSE) View.INVISIBLE else View.VISIBLE
-//        focusExposureSwitchWidget!!.visibility =
-//            if (devicePosition == PhysicalDevicePosition.NOSE) View.INVISIBLE else View.VISIBLE
-//        cameraControlsWidget!!.visibility =
-//            if (devicePosition == PhysicalDevicePosition.NOSE) View.INVISIBLE else View.VISIBLE
-//        focalZoomWidget!!.visibility =
-//            if (devicePosition == PhysicalDevicePosition.NOSE) View.INVISIBLE else View.VISIBLE
-//        horizontalSituationIndicatorWidget!!.setSimpleModeEnable(devicePosition != PhysicalDevicePosition.NOSE)
-
-        //有其他的显示逻辑，这里确保fpv下不显示
-        if (devicePosition == PhysicalDevicePosition.NOSE) {
-//            exposureSettingsPanel!!.visibility = View.GONE
-        }
-
-        //只在部分len下显示
-//        ndviCameraPanel!!.visibility =
-//            if (CameraUtil.isSupportForNDVI(lensType)) View.VISIBLE else View.INVISIBLE
     }
 
     /**
@@ -511,7 +478,7 @@ open class MainSdkActivity : InitSdkActivity(){
             mapWidget!!.startAnimation(mapViewAnimation)
             isMapMini = true
             // 缩放按钮显示/隐藏
-            mapWidget?.minimizedMap(false)
+            mapWidget?.minimizedMap(true)
             fpvViewExpand?.visibility = View.GONE
 
         }
@@ -523,7 +490,7 @@ open class MainSdkActivity : InitSdkActivity(){
             mapWidget!!.startAnimation(mapViewAnimation)
             isMapMini = false
             // 缩放按钮显示/隐藏
-            mapWidget?.minimizedMap(true)
+            mapWidget?.minimizedMap(false)
             fpvViewExpand?.visibility = View.VISIBLE
 
         }

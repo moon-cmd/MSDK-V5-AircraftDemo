@@ -36,12 +36,32 @@
         android:id="@+id/widget_flight_main_menu"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:gravity="bottom|center">
+        android:orientation="vertical"
+        android:layout_marginRight="@dimen/uxsdk_30_dp"
+        android:visibility="gone"
+        android:gravity="center|right">
+
         <Button
             android:layout_width="@dimen/uxsdk_100_dp"
             android:layout_height="@dimen/uxsdk_55_dp"
-            android:text="@string/uxsdk_pointFlightMode"
-            android:id="@+id/btn_pointFlightMode"/>
+            android:text="@string/uxsdk_flight_point"
+            android:visibility="gone"
+            android:id="@+id/btn_flight_point"/>
+
+        <Button
+            android:layout_width="@dimen/uxsdk_100_dp"
+            android:layout_height="@dimen/uxsdk_55_dp"
+            android:text="@string/uxsdk_delete_flight_point"
+            android:visibility="gone"
+            android:id="@+id/btn_delete_flight_point"/>
+
+        <Button
+            android:layout_width="@dimen/uxsdk_100_dp"
+            android:layout_height="@dimen/uxsdk_55_dp"
+            android:text="@string/uxsdk_add_flight_point"
+            android:id="@+id/btn_add_flight_point"/>
+
+
 
         <Button
             android:layout_width="@dimen/uxsdk_100_dp"
@@ -50,5 +70,8 @@
             android:layout_marginLeft="@dimen/uxsdk_10_dp"
             android:id="@+id/btn_KmlFlightMode"/>
 
+
     </LinearLayout>
+
+
 </androidx.constraintlayout.widget.ConstraintLayout>
