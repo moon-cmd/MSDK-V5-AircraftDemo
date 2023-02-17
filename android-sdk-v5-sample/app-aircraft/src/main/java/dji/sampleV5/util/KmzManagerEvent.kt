@@ -1,6 +1,7 @@
 package dji.sampleV5.util
 
 import androidx.lifecycle.LifecycleOwner
+import com.esri.arcgisruntime.geometry.Point
 import dji.sdk.wpmz.value.mission.WaylineExecuteWaypoint
 import dji.v5.ux.mapkit.core.models.DJILatLng
 
@@ -12,7 +13,7 @@ interface KmzManagerEvent {
     /**
      * 绘制线
      */
-    fun drawLinesEvent(points: List<WaylineExecuteWaypoint>){}
+    fun drawLinesEvent(points: List<Point>){}
 
     /**
      * 绘制点

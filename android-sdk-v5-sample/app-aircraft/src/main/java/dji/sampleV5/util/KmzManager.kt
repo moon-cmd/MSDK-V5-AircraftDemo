@@ -6,11 +6,12 @@ import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.LifecycleOwner
 import com.amap.api.maps.model.Poi
 import com.esri.arcgisruntime.geometry.Point
+import com.esri.arcgisruntime.geometry.SpatialReference
+import com.esri.arcgisruntime.geometry.SpatialReferences
 import dji.sampleV5.moduleaircraft.data.FlightControlState
 import dji.sampleV5.moduleaircraft.models.WayPointV3VM
 import dji.sdk.keyvalue.key.FlightControllerKey
 import dji.sdk.keyvalue.key.KeyTools
-import dji.sdk.wpmz.jni.JNIWPMZManager
 import dji.sdk.wpmz.value.mission.WaylineExecuteWaypoint
 import dji.v5.common.callback.CommonCallbacks
 import dji.v5.common.error.IDJIError
@@ -33,7 +34,7 @@ import java.io.FileOutputStream
  * KMZ 航线文件管理
  */
 
-class KmzManager : KmzManagerEvent{
+class KmzManager{
 
     private val TAG: String = "航线管理"
 
@@ -62,7 +63,7 @@ class KmzManager : KmzManagerEvent{
     // 航线转态
     private var curMissionExecuteState: WaypointMissionExecuteState? = null
 
-    private var selectWaylines: List<Int> = emptyList()
+    private var selectWaylines: ArrayList<Int> =  arrayListOf<Int>()
 
     // 飞行高度
     var flightHeight: Double = 100.0
@@ -75,9 +76,11 @@ class KmzManager : KmzManagerEvent{
     var flightStateInfo:  FlightControlState? = null
 
     // 历史飞行航点
-    var historyFlightPoint: HashMap<String, List<Point>> = HashMap<String, List<Point>>()
+    var historyFlightPoint: ArrayList<Point> = arrayListOf<Point>()
 
     var homeLocation: Point? = null
+
+    private lateinit var drawLineEvent: (ArrayList<Point>) -> Unit
 
     constructor( wayPointV3VM: WayPointV3VM,viewLifecycleOwner: LifecycleOwner){
         this.wayPointV3VM = wayPointV3VM
@@ -86,6 +89,8 @@ class KmzManager : KmzManagerEvent{
         initKmzFile()
         // 飞行监听
         initFlightListenerEvent()
+        // 清除
+        clearFlightPointInfo()
     }
 
     /**
@@ -122,8 +127,9 @@ class KmzManager : KmzManagerEvent{
         waylineFilePath = rootDir + unzipChildDir + unzipDir + WPMZParserManager.WAYLINE_FILE
 
         // 航线初始化
-        selectWaylines =  wayPointV3VM.getAvailableWaylineIDs(curMissionPath)
-
+        for (waylineID in wayPointV3VM.getAvailableWaylineIDs(curMissionPath)){
+            selectWaylines.add(waylineID)
+        }
 
     }
 
@@ -186,12 +192,15 @@ class KmzManager : KmzManagerEvent{
     /**
      * 执行航线任务
      */
-    fun startTask(){
+    fun startTask(drawFlightRoute: Boolean){
 
         // 更新航线文件
         updateWPML()
+        // 绘制航线
+        if(drawFlightRoute) drawFlightRoute()
         // 保存到历史文件
         saveTaskToHistory()
+
         // 设置仿地飞行
         if(terrainFollowingMode) setTerrainFollowMode()
 
@@ -282,7 +291,7 @@ class KmzManager : KmzManagerEvent{
      * 更新航线文件
      */
     private fun updateWPML() {
-        val waylineFile = File(rootDir + unzipChildDir + unzipDir, WPMZParserManager.WAYLINE_FILE)
+        val waylineFile = File(waylineFilePath)
 
         Single.fromCallable {
             // 将修改后的waylines.wpml重新压缩打包成 kmz
@@ -301,28 +310,33 @@ class KmzManager : KmzManagerEvent{
     }
 
     private fun saveTaskToHistory(){
-        // 航线标记
-        // version参数实际未用到
-        var waypoints: ArrayList<WaylineExecuteWaypoint> = ArrayList<WaylineExecuteWaypoint>()
-        val parseInfo = JNIWPMZManager.getWaylines("1.0.0", curMissionPath)
 
-
-        var waylines = parseInfo.waylines
-        waylines.forEach() {
-            waypoints.addAll(it.waypoints)
-            // 保存到历史记录
-            var points: List<Point> = if(historyFlightPoint.containsKey("${it.waylineId}")) historyFlightPoint["${it.waylineId}"]!! else emptyList()
-            for (point in it.waypoints){
-                points.plus(Point(point.location.longitude, point.location.latitude, point.executeHeight))
-            }
-            historyFlightPoint["${it.waylineId}"] = points
-
-            drawLinesEvent(it.waypoints)
+        getFlightPoints { point: Point ->
+            historyFlightPoint.add(point)
         }
-        waypoints.forEach() {
-            drawPointEvent(DJILatLng(it.location.latitude, it.location.longitude), it.waypointIndex)
-        }
+
     }
+
+    /**
+     * 绘制航线
+     */
+    private fun drawFlightRoute(){
+        var points: ArrayList<Point> = arrayListOf<Point>()
+
+        if (historyFlightPoint.isEmpty()){
+            homeLocation?.let { points.add(it) }
+        }else{
+            points.add(historyFlightPoint[historyFlightPoint.size - 1])
+        }
+
+        getFlightPoints { point: Point ->
+            points.add(point)
+        }
+
+        // 绘制航线
+        drawLineEvent(points)
+    }
+
 
     fun getErrorMsg(error: IDJIError): String {
         if (!TextUtils.isEmpty(error.description())) {
@@ -355,7 +369,7 @@ class KmzManager : KmzManagerEvent{
     /**
      * 添加航点
      */
-    fun addFlightPoint(lat: Double, lng: Double, height: Double?){
+    fun addFlightPoint(point: Point, height: Double?){
         var  waylineFile = File(waylineFilePath)
         if (!waylineFile.exists()) {
             ToastUtils.showToast("航线文件不存在")
@@ -388,7 +402,7 @@ class KmzManager : KmzManagerEvent{
         var placeMarkElement = folderNode.addElement("Placemark")
 
         // Point -> coordinates 添加坐标点
-        placeMarkElement.addElement("Point").addElement("coordinates").addText("${lat},${lng}")
+        placeMarkElement.addElement("Point").addElement("coordinates").addText("${point.x},${point.y}")
         // wpml:index 添加索引
         placeMarkElement.addElement("wpml:index").addText("$index")
         // wpml:executeHeight
@@ -499,6 +513,38 @@ class KmzManager : KmzManagerEvent{
         write.close()
     }
 
+
+    /**
+     * 航线绘制事件绑定
+     */
+    fun setDrawLineEvent(event: (ArrayList<Point>) -> Unit){
+        this.drawLineEvent = event
+    }
+
+
+    private  fun getFlightPoints(event: (Point) -> Unit){
+        val waylineFile = File(waylineFilePath)
+
+        val reader = SAXReader()
+        val document: Document = reader.read(waylineFile)
+
+        // 查找节点
+        var map = HashMap<String, String>()
+        map["xmlns"] = document.rootElement.namespaceURI
+
+        // 查找索引
+        var str = "//xmlns:coordinates"
+        var filter = document.createXPath(str)
+        filter.setNamespaceURIs(map)
+        var coordinates = filter.selectNodes(document)
+
+        for (node in coordinates){
+            var coordinateStr = node.text.split(',')
+            var point = Point(coordinateStr[0].toDouble(), coordinateStr[1].toDouble(), flightHeight, SpatialReferences.getWgs84())
+            event(point)
+        }
+
+    }
 }
 
 

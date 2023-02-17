@@ -1,6 +1,7 @@
 package dji.sampleV5.aircraft
 
 import android.Manifest
+import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.Point
 import android.os.Bundle
@@ -12,11 +13,10 @@ import androidx.activity.viewModels
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.view.GravityCompat
 import androidx.drawerlayout.widget.DrawerLayout
-import androidx.fragment.app.Fragment
-import androidx.fragment.app.activityViewModels
 import dji.sampleV5.map.ArcGISMapWidget
 import dji.sampleV5.moduleaircraft.models.WayPointV3VM
 import dji.sampleV5.modulecommon.util.DensityUtil
+import dji.sampleV5.util.FileUtil
 import dji.sampleV5.util.KmzManager
 import dji.sampleV5.util.ResizeAnimation
 import dji.sdk.keyvalue.value.common.CameraLensType
@@ -118,6 +118,9 @@ open class MainSdkActivity : InitSdkActivity(){
 
     private var kmzManager:KmzManager? = null
 
+    // 加载kml文件监听
+    private lateinit var selectFileListener: (String, Int) -> Unit
+
     //region 生命周期
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -171,8 +174,9 @@ open class MainSdkActivity : InitSdkActivity(){
 //            ?.setStateChangeResourceId(R.id.panel_camera_controls_exposure_settings)
         initClickListener()
         kmzManager = KmzManager(wayPointV3VM, this)
+        kmzManager?.setDrawLineEvent { points: List<com.esri.arcgisruntime.geometry.Point> -> mapWidget?.addPolyline(points) }
         mapWidget?.kmzManager = kmzManager
-
+        selectFileListener = mapWidget?.selectFileListenerEvent!!
         MediaDataCenter.getInstance().videoStreamManager.addStreamSourcesListener { sources: List<StreamSource>? ->
             runOnUiThread { updateFPVWidgetSource(sources) }
         }
@@ -208,7 +212,7 @@ open class MainSdkActivity : InitSdkActivity(){
 //        })
 
         mapWidget?.setWidgetModel(getProductInstance())
-        mapWidget?.activityContext = this
+        mapWidget?.setActiveContext(this)
 
     }
 
@@ -274,11 +278,6 @@ open class MainSdkActivity : InitSdkActivity(){
 
         fpvViewExpand?.setOnClickListener{v: View? -> onViewClick(fpvLayout!!)}
 
-        mapWidget?.setLoadKmlClickListener { v: View? ->
-
-//            var kmzManagerEvent = KmzManager()
-//            kmzManagerEvent.addFlightPoint(10.0,34.0, null)
-        }
     }
 
     private fun toggleRightDrawer() {
@@ -560,4 +559,27 @@ open class MainSdkActivity : InitSdkActivity(){
     //endregion
 
     //endregion
+
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+
+        var context = this
+        if(resultCode == RESULT_OK){
+            //        switch(requestCode){
+//              case FileUtil.KmlSelectResponseCode:
+//              Uri uri=data.getData();
+//               chooseFilePath=FileChooseUtil.getInstance(this).getChooseFileResultPath(uri);
+//              Log.d(TAG,"选择文件返回："+chooseFilePath);
+//              sendFileMessage(chooseFilePath);
+//               break;
+//        }
+            var uri = data?.data
+            var path = FileUtil.getChooseFileResultPath(context, uri!!)
+            selectFileListener(path!!, requestCode)
+
+        }
+
+    }
+
+
 }

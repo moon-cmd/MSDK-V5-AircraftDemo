@@ -842,6 +842,11 @@
     <string name="uxsdk_delete_flight_point">Delete Flight Point</string>
     <string name="uxsdk_cancel_flight_point">Return</string>
     <string name="uxsdk_add_flight_point">Add Flight Point</string>
+    <string name="uxsdk_start_flight">Start Flight</string>
+    <string name="uxsdk_continue_flight">Continue Flight</string>
+    <string name="uxsdk_pause_flight">Pause Flight</string>
+    <string name="uxsdk_cancel_flight">Cancel Flight</string>
+    <string name="uxsdk_load_mmpk">Load MMPK</string>
 
 
 </resources>

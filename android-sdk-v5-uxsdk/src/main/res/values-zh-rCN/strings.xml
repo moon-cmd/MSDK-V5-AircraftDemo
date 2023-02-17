@@ -843,8 +843,13 @@
     <string name="uxsdk_KmlFlightMode">加载KML</string>
     <string name="uxsdk_flight_point">飞到此处</string>
     <string name="uxsdk_delete_flight_point">删除航点</string>
-    <string name="uxsdk_cancel_flight_point">返回</string>
+    <string name="uxsdk_cancel_flight_point">结束飞行</string>
     <string name="uxsdk_add_flight_point">添加航点</string>
+    <string name="uxsdk_start_flight">开始飞行</string>
+    <string name="uxsdk_continue_flight">继续飞行</string>
+    <string name="uxsdk_pause_flight">中止飞行</string>
+    <string name="uxsdk_cancel_flight">结束飞行</string>
+    <string name="uxsdk_load_mmpk">加载地图（mmpk）</string>
 
 
 </resources>

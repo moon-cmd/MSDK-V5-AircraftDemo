@@ -33,6 +33,22 @@
         />
 
     <LinearLayout
+        android:id="@+id/widget_load_map"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:visibility="gone"
+        android:layout_marginLeft="@dimen/uxsdk_20_dp"
+        android:layout_marginTop="@dimen/uxsdk_40_dp">
+
+        <Button
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:id="@+id/btn_load_mmpk"
+            android:text="@string/uxsdk_load_mmpk"/>
+
+    </LinearLayout>
+
+    <LinearLayout
         android:id="@+id/widget_flight_main_menu"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
@@ -61,7 +77,12 @@
             android:text="@string/uxsdk_add_flight_point"
             android:id="@+id/btn_add_flight_point"/>
 
-
+        <Button
+            android:layout_width="@dimen/uxsdk_100_dp"
+            android:layout_height="@dimen/uxsdk_55_dp"
+            android:text="@string/uxsdk_cancel_flight_point"
+            android:visibility="gone"
+            android:id="@+id/btn_cancel_flight_point"/>
 
         <Button
             android:layout_width="@dimen/uxsdk_100_dp"
@@ -70,8 +91,48 @@
             android:layout_marginLeft="@dimen/uxsdk_10_dp"
             android:id="@+id/btn_KmlFlightMode"/>
 
-
     </LinearLayout>
 
+    <!--region kml 飞行控制 -->
+    <LinearLayout
+        android:id="@+id/widget_kmz_flight_menu"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical"
+        android:layout_marginRight="@dimen/uxsdk_30_dp"
+        android:visibility="gone"
+        android:gravity="center|right">
+
+
+        <Button
+            android:layout_width="@dimen/uxsdk_100_dp"
+            android:layout_height="@dimen/uxsdk_55_dp"
+            android:text="@string/uxsdk_start_flight"
+            android:layout_marginLeft="@dimen/uxsdk_10_dp"
+            android:id="@+id/btn_kml_start_flight"/>
+
+        <Button
+            android:layout_width="@dimen/uxsdk_100_dp"
+            android:layout_height="@dimen/uxsdk_55_dp"
+            android:text="@string/uxsdk_pause_flight"
+            android:layout_marginLeft="@dimen/uxsdk_10_dp"
+            android:id="@+id/btn_kml_pause_flight"/>
+
+        <Button
+            android:layout_width="@dimen/uxsdk_100_dp"
+            android:layout_height="@dimen/uxsdk_55_dp"
+            android:text="@string/uxsdk_continue_flight"
+            android:layout_marginLeft="@dimen/uxsdk_10_dp"
+            android:id="@+id/btn_kml_continue_flight"/>
+
+        <Button
+            android:layout_width="@dimen/uxsdk_100_dp"
+            android:layout_height="@dimen/uxsdk_55_dp"
+            android:text="@string/uxsdk_cancel_flight"
+            android:layout_marginLeft="@dimen/uxsdk_10_dp"
+            android:id="@+id/btn_kml_cancel_flight"/>
+
+    </LinearLayout>
+    <!--endregion kmz 飞行控制  -->
 
 </androidx.constraintlayout.widget.ConstraintLayout>
