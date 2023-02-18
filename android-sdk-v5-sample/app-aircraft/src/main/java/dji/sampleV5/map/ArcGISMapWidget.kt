@@ -56,11 +56,13 @@ class ArcGISMapWidget: ConstraintLayoutWidget<Object>{
 
     //region 属性
 
-    private val TAG = "地图加载"
+    companion object {
+        private const val TAG = "地图加载"
+    }
 
     var mapView: MapView? = null
 
-    var btnExpandMap: ImageButton? = null
+    private var btnExpandMap: ImageButton? = null
 
     private var widgetLoadMap: LinearLayout? = null
     private var btnLoadMmpkMap: Button? = null
@@ -115,38 +117,14 @@ class ArcGISMapWidget: ConstraintLayoutWidget<Object>{
 
     private var activityContext: Activity? = null
 
-    // 文件选择
-    private lateinit var selectFileEvent: () -> String
-
     private lateinit var mapPackage: MobileMapPackage
-
-    //region Aircraft Marker Fields
-    private var aircraftMarkerHeading = 0f
-    private val aircraftMarker: DJIMarker? = null
-    private val aircraftIcon: Drawable? = null
-    private val aircraftMarkerEnabled = false
-    private val aircraftIconAnchorX = 0.5f
-    private val aircraftIconAnchorY = 0.5f
-    private val ROTATION_ANIM_DURATION = 100
-    private val FLIGHT_ANIM_DURATION = 130
-    private val COUNTER_REFRESH_THRESHOLD = 200
-    private val DO_NOT_UPDATE_ZOOM = -1
-    private val centerRefreshCounter = 201
-    private val isTouching = false
-    private val mapCenterLockMode = MapCenterLock.AIRCRAFT
-    private val gimbalYawMarker: DJIMarker? = null
-
-    //endregion
 
     /**
      * 文件选择监听
      */
     var selectFileListenerEvent: (String, Int) -> Unit = fun (filePath: String, requestCode: Int){
-
         var fileName = filePath.substringAfterLast("/")
         var ext = fileName.substringAfterLast(".")
-
-
         when(requestCode){
             FileUtil.KmlSelectRequestCode -> {
                 if(!ext.equals("kml", true) && !ext .equals("kmz",true)){
@@ -167,9 +145,9 @@ class ArcGISMapWidget: ConstraintLayoutWidget<Object>{
                 loadMobileMapPackage(filePath)
             }
         }
-
-
     }
+
+    //endregion
 
     //region 构造函数
 
@@ -177,9 +155,7 @@ class ArcGISMapWidget: ConstraintLayoutWidget<Object>{
 
     constructor(context: Context, attrs: AttributeSet) : this(context, attrs, 0)
 
-    constructor(context: Context, attrs: AttributeSet?, defStyleAttr: Int) : super(context, attrs, defStyleAttr) {
-//        initView(context, attrs,defStyleAttr)
-    }
+    constructor(context: Context, attrs: AttributeSet?, defStyleAttr: Int) : super(context, attrs, defStyleAttr) {}
 
     //endregion
 
@@ -190,16 +166,22 @@ class ArcGISMapWidget: ConstraintLayoutWidget<Object>{
         attrs: AttributeSet?,
         defStyleAttr: Int
     ) {
-        inflate(context, R.layout.arcgis_map_widget, this)
+        try {
+            inflate(context, R.layout.arcgis_map_widget, this)
 
-        // 初始化一些变量值
-        initVariable()
-        // 地图初始化
-        initMap(context)
-        // 控件初始化
-        initWidget()
-        // 初始化事件
-        initListenerEvent(context)
+            // 初始化一些变量值
+            initVariable()
+            // 地图初始化
+            initMap(context)
+            // 控件初始化
+            initWidget()
+            // 初始化事件
+            initListenerEvent(context)
+
+        }catch (e:Exception){
+            ToastUtils.showToast("地图初始化异常，${e.message}")
+            LogUtils.e(TAG, "地图初始化异常，${e.message},${e.stackTraceToString()}")
+        }
 
     }
 
@@ -214,7 +196,7 @@ class ArcGISMapWidget: ConstraintLayoutWidget<Object>{
     private fun initMap(context: Context?) {
         LogUtils.i("开始初始化arcgis地图...")
         ArcGISRuntimeEnvironment.setApiKey(BuildConfig.ARCGIS_API_KEY)
-        ArcGISRuntimeEnvironment.setLicense("runtimelite,1000,rud4449636536,none,NKMFA0PL4S0DRJE15166")
+//        ArcGISRuntimeEnvironment.setLicense("runtimelite,1000,rud4449636536,none,NKMFA0PL4S0DRJE15166")
 
         mapView = findViewById(R.id.mapView)
 
@@ -268,83 +250,86 @@ class ArcGISMapWidget: ConstraintLayoutWidget<Object>{
 
         // 加载mmpk地图
         btnLoadMmpkMap?.setOnClickListener {
-            // 选择文件
-            val intent = Intent(Intent.ACTION_GET_CONTENT)
-            intent.type = "*/*"
-            intent.addCategory(Intent.CATEGORY_OPENABLE)
-            activityContext?.startActivityForResult(
-                Intent.createChooser(intent, "请选择MMPK文件"), FileUtil.MmpkSelectRequestCode
-            )
+            try {
+                // 选择文件
+                val intent = Intent(Intent.ACTION_GET_CONTENT)
+                intent.type = "*/*"
+                intent.addCategory(Intent.CATEGORY_OPENABLE)
+                activityContext?.startActivityForResult(
+                    Intent.createChooser(intent, "请选择MMPK文件"), FileUtil.MmpkSelectRequestCode
+                )
+            }catch (e:Exception){
+                ToastUtils.showToast("选择mmpk文件异常，${e.message}")
+                LogUtils.e(TAG, "选择mmpk文件异常，${e.message},${e.stackTraceToString()}")
+            }
+
         }
 
         // 地图点击事件监听
         mapView?.onTouchListener = object : DefaultMapViewOnTouchListener(context, mapView) {
-
             override fun onSingleTapUp(e: MotionEvent): Boolean {
-                // 获取屏幕点击位置
-                val point = android.graphics.Point(e.x.roundToInt(), e.y.roundToInt())
-                // 屏幕位置转换为地图位置
-                val mapLocation: Point = mapView?.screenToLocation(point) ?: return super.onSingleTapUp(e)
+                try {
+                    // 获取屏幕点击位置
+                    val point = android.graphics.Point(e.x.roundToInt(), e.y.roundToInt())
+                    // 屏幕位置转换为地图位置
+                    val mapLocation: Point = mapView?.screenToLocation(point) ?: return super.onSingleTapUp(e)
 
-                // 转换为84坐标系
-                val wgs84Point:  Point =
-                    GeometryEngine.project(mapLocation, SpatialReferences.getWgs84()) as  Point
+                    // 转换为84坐标系
+                    val wgs84Point:  Point =
+                        GeometryEngine.project(mapLocation, SpatialReferences.getWgs84()) as  Point
 
-
-                // 绘制要素选择
-                var identifyFuture = mapView?.identifyGraphicsOverlayAsync(graphicsOverlay, point, 10.0, false, 10)
-                identifyFuture!!.addDoneListener {
-                    try {
-                        //region 绘制图形选择
-
-                        //  获取选中图形
-                        selectGraphics = identifyFuture!!.get().graphics
-
-                        // 清空历史选择
-                        if(selectGraphics.isNotEmpty()) clearSection()
-
-                        // 选中要素
-                        for (graphic in selectGraphics) {
-                            // select each graphic
-                            graphic.isSelected = graphic.geometry is Point
-                            // 不允许多选，则只选中第一个
-                            if(!allowMulSelect) break
-                        }
-
-                        //endregion
-
-                    } catch (ex: InterruptedException) {
-                        LogUtils.e(TAG,"图形选择异常：${ex.message}")
-                    } catch (ex: ExecutionException) {
-                        LogUtils.e(TAG,"图形选择异常：${ex.message}")
-                    }
-                }
-
-                // kml 要素选择
-                var kmzHighlightStyle = KmlStyle()
-                kmzHighlightStyle.lineStyle = KmlLineStyle(Color.rgb(0, 255, 255), 5.0)
-                kmzHighlightStyle.polygonStyle = KmlPolygonStyle(Color.rgb(0, 255, 255))
-
-                for (kmlLayer in mapView?.map?.operationalLayers!!){
-
-                    var identify = mMapView
-                        .identifyLayerAsync(kmlLayer, point, 5.0, false);
-
-                    identify.addDoneListener {
+                    // 绘制要素选择
+                    var identifyFuture = mapView?.identifyGraphicsOverlayAsync(graphicsOverlay, point, 10.0, false, 10)
+                    identifyFuture!!.addDoneListener {
                         try {
-                            val result = identify.get().elements
+                            //region 绘制图形选择
+
                             // 清空历史选择
-                            if(result.isNotEmpty()) clearSection()
+                            if(selectGraphics.isNotEmpty() && selectKmlElement.isEmpty()) clearSection()
 
-                            for (geoElement in result) {
+                            //  获取选中图形
+                            selectGraphics = identifyFuture!!.get().graphics
 
-                                if(geoElement !is KmlPlacemark) continue
-
-                                geoElement.isHighlighted = true
-                                geoElement.highlightStyle = kmzHighlightStyle
-                                selectKmlElement.add(geoElement)
-
+                            // 选中要素
+                            for (graphic in selectGraphics) {
+                                // select each graphic
+                                graphic.isSelected = graphic.geometry is Point
+                                // 不允许多选，则只选中第一个
                                 if(!allowMulSelect) break
+                            }
+
+                            //endregion
+
+                        } catch (ex: InterruptedException) {
+                            LogUtils.e(Companion.TAG,"图形选择异常：${ex.message}")
+                        } catch (ex: ExecutionException) {
+                            LogUtils.e(Companion.TAG,"图形选择异常：${ex.message}")
+                        }
+                    }
+
+                    // kml 要素选择
+                    var kmzHighlightStyle = KmlStyle()
+                    kmzHighlightStyle.lineStyle = KmlLineStyle(Color.rgb(0, 255, 255), 5.0)
+                    kmzHighlightStyle.polygonStyle = KmlPolygonStyle(Color.rgb(0, 255, 255))
+                    for (kmlLayer in mapView?.map?.operationalLayers!!){
+
+                        var identify = mMapView
+                            .identifyLayerAsync(kmlLayer, point, 5.0, false);
+                        identify.addDoneListener {
+                            try {
+                                val result = identify.get().elements
+                                // 清空历史选择
+                                if(result.isNotEmpty() && selectGraphics.isEmpty()) clearSection()
+
+                                for (geoElement in result) {
+
+                                    if(geoElement !is KmlPlacemark) continue
+
+                                    geoElement.isHighlighted = true
+                                    geoElement.highlightStyle = kmzHighlightStyle
+                                    selectKmlElement.add(geoElement)
+
+                                    if(!allowMulSelect) break
 
 //                                val placemark = geoElement
 //                                // Google Earth only displays the placemarks with description or extended data. To
@@ -361,32 +346,20 @@ class ArcGISMapWidget: ConstraintLayoutWidget<Object>{
 //                                callout.content = calloutContent
 //                                callout.show()
 //                                break
-                            }
+                                }
 
-                        }catch (error: java.lang.Exception){
+                            }catch (error: java.lang.Exception){
 
-                        }
-                    }
-
-
-                }
-
-
-                when (mouseMode) {
-                    MouseMode.Default -> {
-                        // 图形选择
-                    }
-                    MouseMode.DrawFlyPoint -> {
-                        var draw = true
-                        for (graphic in selectGraphics){
-                            if(graphic.geometry !is Point) continue
-                            var  selectPoint = graphic.geometry as Point
-                            if(abs(selectPoint.x - wgs84Point.x) < 0.001 && abs(selectPoint.y - wgs84Point.y) < 0.001){
-                                draw = false
-                                break
                             }
                         }
-                        if(draw){
+
+                    }
+
+                    when (mouseMode) {
+                        MouseMode.Default -> {
+                            // 图形选择
+                        }
+                        MouseMode.DrawFlyPoint -> {
                             addMarker(wgs84Point.x, wgs84Point.y, null)
                             mouseMode = MouseMode.Default
                             // 显示航点飞行菜单
@@ -400,6 +373,9 @@ class ArcGISMapWidget: ConstraintLayoutWidget<Object>{
 //                            mapView?.setViewpoint(com.esri.arcgisruntime.mapping.Viewpoint(wgs84Point.y, wgs84Point.x, 10000.0))
                         }
                     }
+                }catch (e:Exception){
+                    ToastUtils.showToast("onTouch失败，${e.message}")
+                    LogUtils.e(TAG, "onTouch异常，${e.message},${e.stackTraceToString()}")
                 }
 
                 return super.onSingleTapUp(e)
@@ -415,68 +391,79 @@ class ArcGISMapWidget: ConstraintLayoutWidget<Object>{
 
         // 飞到指定点
         btnFlightPoint?.setOnClickListener{
+            try {
+                if (selectGraphics.isEmpty()){
+                    DialogUtil.showTipDialog(context, null, "请先选择航点！", object:CommonCallbacks.CompletionCallback{
+                        override fun onSuccess() {}
+                        override fun onFailure(error: IDJIError) {}
+                    })
 
-            if (selectGraphics.isEmpty()){
-                DialogUtil.showTipDialog(context, null, "请先选择航点！", object:CommonCallbacks.CompletionCallback{
-                    override fun onSuccess() {}
+                    return@setOnClickListener
+                }
+                var graphic = selectGraphics[0].geometry as Point
+                DialogUtil.showTipDialog(context, "提示", "是否飞行到当前位置？", object: CommonCallbacks.CompletionCallback{
+                    override fun onSuccess() {
+
+                        // 显示飞行信息
+                        activityContext?.let { it1 ->
+                            dji.sampleV5.util.DialogUtil.showFlightBasicInfo(it1, null, kmzManager, object: CommonCallbacks.CompletionCallbackWithParam<KmzManager>{
+                                override fun onSuccess(t: KmzManager?) {
+                                    // 保存
+                                    kmzManager = t
+                                    // 开始飞行
+                                    kmzManager?.clearFlightPointInfo()
+                                    kmzManager?.addFlightPoint(graphic as Point,null)
+                                    kmzManager?.startTask(true)
+                                }
+
+                                override fun onFailure(error: IDJIError) { }
+                            })
+                        }
+                    }
                     override fun onFailure(error: IDJIError) {}
                 })
-
-                return@setOnClickListener
+            }catch (e:Exception){
+                ToastUtils.showToast("航点飞行失败，${e.message}")
+                LogUtils.e(TAG, "航点飞行异常，${e.message},${e.stackTraceToString()}")
             }
-            var graphic = selectGraphics[0].geometry as Point
-            DialogUtil.showTipDialog(context, "提示", "是否飞行到当前位置？", object: CommonCallbacks.CompletionCallback{
-                override fun onSuccess() {
 
-                    // 显示飞行信息
-                    activityContext?.let { it1 ->
-                        dji.sampleV5.util.DialogUtil.showFlightBasicInfo(it1, null, kmzManager, object: CommonCallbacks.CompletionCallbackWithParam<KmzManager>{
-                            override fun onSuccess(t: KmzManager?) {
-                                // 保存
-                                kmzManager = t
-                                // 开始飞行
-                                kmzManager?.clearFlightPointInfo()
-                                kmzManager?.addFlightPoint(graphic as Point,null)
-                                kmzManager?.startTask(true)
-                            }
-
-                            override fun onFailure(error: IDJIError) { }
-                        })
-                    }
-                }
-                override fun onFailure(error: IDJIError) {}
-            })
         }
 
         // 删除航点
         btnDeleteFlightPoint?.setOnClickListener{
-            if(selectGraphics == null || selectGraphics.isEmpty()){
+            try {
+                if(selectGraphics == null || selectGraphics.isEmpty()){
 
-                DialogUtil.showTipDialog(context, "提示", "是否删除所有航点？", object: CommonCallbacks.CompletionCallback{
-                    override fun onSuccess() {
-                        // 清除所有航点
-                        graphicsOverlay?.graphics?.clear()
-                        selectGraphics = emptyList()
-                    }
+                    DialogUtil.showTipDialog(context, "提示", "是否删除所有航点？", object: CommonCallbacks.CompletionCallback{
+                        override fun onSuccess() {
+                            // 清除所有航点
+                            graphicsOverlay?.graphics?.clear()
+                            selectGraphics = emptyList()
+                        }
 
-                    override fun onFailure(error: IDJIError) {
+                        override fun onFailure(error: IDJIError) {
 
-                    }
+                        }
 
-                })
-                btnFlightPoint?.visibility = GONE
-                btnDeleteFlightPoint?.visibility = GONE
-                return@setOnClickListener
+                    })
+                    btnFlightPoint?.visibility = GONE
+                    btnDeleteFlightPoint?.visibility = GONE
+                    return@setOnClickListener
+                }
+                // 删除航点
+                for (graphic in selectGraphics){
+                    graphicsOverlay?.graphics?.remove(graphic)
+                }
+                // 航点为空，隐藏飞行
+                if (graphicsOverlay?.graphics?.isEmpty() == true){
+                    btnFlightPoint?.visibility = GONE
+                    btnDeleteFlightPoint?.visibility = GONE
+                }
+            }catch (e:Exception){
+                ToastUtils.showToast("删除航点失败，${e.message}")
+                LogUtils.e(TAG, "删除航点异常，${e.message},${e.stackTraceToString()}")
             }
-            // 删除航点
-            for (graphic in selectGraphics){
-                graphicsOverlay?.graphics?.remove(graphic)
-            }
-            // 航点为空，隐藏飞行
-            if (graphicsOverlay?.graphics?.isEmpty() == true){
-                btnFlightPoint?.visibility = GONE
-                btnDeleteFlightPoint?.visibility = GONE
-            }
+
         }
 
         // 取消航点飞行
@@ -494,89 +481,124 @@ class ArcGISMapWidget: ConstraintLayoutWidget<Object>{
 
         // 最大化地图
         btnExpandMap?.setOnClickListener ( OnClickListener {
-            expandMapEvent(it)
+
+            try {
+                expandMapEvent(it)
+            }catch (e:Exception){
+                ToastUtils.showToast("地图最大化异常，${e.message}")
+                LogUtils.e(TAG, "地图最大化异常，${e.message},${e.stackTraceToString()}")
+            }
         })
 
         // 导入kml
         btnImportKml?.setOnClickListener {
-            // 选择文件
-//            val intent = Intent(Intent.ACTION_GET_CONTENT)
-//            intent.type = "*/*"
-//            intent.addCategory(Intent.CATEGORY_OPENABLE)
-//            activityContext?.startActivityForResult(
-//                Intent.createChooser(intent, "请选择kml文件"), FileUtil.KmlSelectResponseCode
-//            )
+            try {
+                // 选择文件
+                val intent = Intent(Intent.ACTION_GET_CONTENT)
+                intent.type = "*/*"
+                intent.addCategory(Intent.CATEGORY_OPENABLE)
+                activityContext?.startActivityForResult(
+                    Intent.createChooser(intent, "请选择kml文件"), FileUtil.KmlSelectRequestCode
+                )
+                // 测试 kml加载
+//            selectFileListenerEvent("/storage/emulated/0/Download/WeiXin/kmlTest.kmz", FileUtil.KmlSelectRequestCode)
 
-            // 测试 kml加载
-            selectFileListenerEvent("/storage/emulated/0/Download/WeiXin/kmlTest.kmz", FileUtil.KmlSelectRequestCode)
+            }catch (e:Exception){
+                ToastUtils.showToast("导入kml失败，${e.message}")
+                LogUtils.e(TAG, "导入kml异常，${e.message},${e.stackTraceToString()}")
+            }
+
 
         }
 
         // kmz 开始飞行
         btnKmzStartFlight?.setOnClickListener{
+            try {
+                if(selectKmlElement.isEmpty()){
+                    DialogUtil.showTipDialog(context, null, "请选择飞行航线!", object: CommonCallbacks.CompletionCallback{
+                        override fun onSuccess() { }
+                        override fun onFailure(error: IDJIError) {}
+                    })
 
-            if(selectKmlElement.isEmpty()){
-                DialogUtil.showTipDialog(context, null, "请选择飞行航线!", object: CommonCallbacks.CompletionCallback{
-                    override fun onSuccess() { }
+                    return@setOnClickListener
+                }
+
+                DialogUtil.showTipDialog(context, "提示", "是否沿当前航线飞行？", object: CommonCallbacks.CompletionCallback{
+
+                    override fun onSuccess() {
+                        // 显示飞行信息
+                        activityContext?.let { it1 ->
+                            dji.sampleV5.util.DialogUtil.showFlightBasicInfo(it1, null, kmzManager, object: CommonCallbacks.CompletionCallbackWithParam<KmzManager>{
+                                override fun onSuccess(t: KmzManager?) {
+                                    // 保存
+                                    kmzManager = t
+
+                                    // 开始飞行
+                                    kmzManager?.clearFlightPointInfo()
+                                    for (element in selectKmlElement){
+                                        if(element.geometry is Point){
+                                            kmzManager?.addFlightPoint(element.geometry as Point,null)
+                                        }else if(element.geometry is Polyline){
+                                            var polyline = element.geometry as Polyline
+                                            for (point in  polyline.parts.partsAsPoints){
+                                                kmzManager?.addFlightPoint(point, null)
+                                            }
+                                        }
+                                    }
+
+                                    kmzManager?.startTask(false)
+                                }
+
+                                override fun onFailure(error: IDJIError) { }
+                            })
+                        }
+                    }
                     override fun onFailure(error: IDJIError) {}
                 })
 
-                return@setOnClickListener
+            }catch (e:Exception){
+                ToastUtils.showToast("kmz航线飞行失败，${e.message}")
+                LogUtils.e(TAG, "kmz航线飞行异常，${e.message},${e.stackTraceToString()}")
             }
-
-            DialogUtil.showTipDialog(context, "提示", "是否沿当前航线飞行？", object: CommonCallbacks.CompletionCallback{
-
-                override fun onSuccess() {
-                    // 显示飞行信息
-                    activityContext?.let { it1 ->
-                        dji.sampleV5.util.DialogUtil.showFlightBasicInfo(it1, null, kmzManager, object: CommonCallbacks.CompletionCallbackWithParam<KmzManager>{
-                            override fun onSuccess(t: KmzManager?) {
-                                // 保存
-                                kmzManager = t
-
-                                // 开始飞行
-                                kmzManager?.clearFlightPointInfo()
-                                for (element in selectKmlElement){
-                                    if(element.geometry is Point){
-                                        kmzManager?.addFlightPoint(element.geometry as Point,null)
-                                    }else if(element.geometry is Polyline){
-                                        var polyline = element.geometry as Polyline
-                                        for (point in  polyline.parts.partsAsPoints){
-                                            kmzManager?.addFlightPoint(point, null)
-                                        }
-                                    }
-                                }
-
-                                kmzManager?.startTask(false)
-                            }
-
-                            override fun onFailure(error: IDJIError) { }
-                        })
-                    }
-                }
-                override fun onFailure(error: IDJIError) {}
-            })
 
         }
 
         // kmz 继续飞行
         btnKmzContinueFlight?.setOnClickListener {
-            kmzManager?.resumeTask()
+            try {
+                kmzManager?.resumeTask()
+            }catch (e:Exception){
+                ToastUtils.showToast("继续飞行失败，${e.message}")
+                LogUtils.e(TAG, "kml航线继续飞行异常，${e.message},${e.stackTraceToString()}")
+            }
+
         }
 
         // kmz 中止飞行
         btnKmzPauseFlight?.setOnClickListener {
-            kmzManager?.pauseTask()
+            try {
+                kmzManager?.pauseTask()
+            }catch (e:Exception){
+                ToastUtils.showToast("中止飞行失败，${e.message}")
+                LogUtils.e(TAG, "中止飞行异常，${e.message},${e.stackTraceToString()}")
+            }
+
         }
 
         // kmz 取消飞行
         btnKmzCancelFlight?.setOnClickListener {
-            widgetKmzFlightMenu?.visibility = GONE
-            widgetFlightMainMenu?.visibility = VISIBLE
+            try {
+                widgetKmzFlightMenu?.visibility = GONE
+                widgetFlightMainMenu?.visibility = VISIBLE
 
-            kmzManager?.stopTask()
+                kmzManager?.stopTask()
 
-            mapView?.map?.operationalLayers?.clear()
+                mapView?.map?.operationalLayers?.clear()
+            }catch (e:Exception){
+                ToastUtils.showToast("取消飞行失败，${e.message}")
+                LogUtils.e(TAG, "取消飞行异常，${e.message},${e.stackTraceToString()}")
+            }
+
         }
     }
 
@@ -597,31 +619,40 @@ class ArcGISMapWidget: ConstraintLayoutWidget<Object>{
         selectGraphics = emptyList()
     }
 
-
     override fun reactToModelChanges() {
-        addReaction(
-            widgetModel!!.productConnection.observeOn(ui()).subscribe { connected: Boolean ->
-                if (connected) {
-                    reactToHeadingChanges()?.let { addReaction(it) }
-                    addReaction(
-                        widgetModel!!.homeLocation
-                            .observeOn(ui())
-                            .subscribe(this::updateHomeLocation)
-                    )
-                    addReaction(
-                        widgetModel!!.aircraftLocation
-                            .observeOn(ui())
-                            .subscribe(this::updateAircraftLocation)
-                    )
-                }
-            })
+        try {
+            addReaction(
+                widgetModel!!.productConnection.observeOn(ui()).subscribe { connected: Boolean ->
+                    if (connected) {
+                        reactToHeadingChanges()?.let { addReaction(it) }
+                        addReaction(
+                            widgetModel!!.homeLocation
+                                .observeOn(ui())
+                                .subscribe(this::updateHomeLocation)
+                        )
+                        addReaction(
+                            widgetModel!!.aircraftLocation
+                                .observeOn(ui())
+                                .subscribe(this::updateAircraftLocation)
+                        )
+                    }
+                })
+        }catch (e:Exception){
+            ToastUtils.showToast("reactToModelChanges异常，${e.message}")
+            LogUtils.e(TAG, "reactToModelChanges异常，${e.message},${e.stackTraceToString()}")
+        }
+
     }
 
+    fun setActiveContext(context: Activity){
+        this.activityContext = context
+    }
     //endregion
 
-    //region 飞机起飞点更新
+    //region 飞机位置更新
 
     //region 飞机起飞点更新
+
     /**
      * 更新飞机起飞点
      * @param homeLocation
@@ -634,20 +665,15 @@ class ArcGISMapWidget: ConstraintLayoutWidget<Object>{
         if (mapView == null || !homePosition.isAvailable) return
 
         // 地图上标记起飞点
-//        if (homeMarker != null) {
-//            homeMarker.setPosition(homePosition);
-//            updateCameraPosition();
-//        } else {
-//            initHomeOnMap(homePosition);
-//        }
+        addMarker(homeLocation.getLongitude(), homeLocation.getLatitude(), null)
     }
 
     //endregion
 
-    //region 飞机朝向更新
+    //region 飞机朝向更新[未实现]
 
     /**
-     * 飞机朝向更新
+     * 飞机朝向更新[未实现]
      * @return
      */
     private fun reactToHeadingChanges(): Disposable? {
@@ -655,7 +681,7 @@ class ArcGISMapWidget: ConstraintLayoutWidget<Object>{
     }
     //endregion
 
-    //region 飞机位置更新
+    //region 飞机位置更新[未实现]
 
     private fun updateAircraftLocation(locationCoordinate3D: LocationCoordinate3D) {
         if (mapView == null) return
@@ -667,28 +693,19 @@ class ArcGISMapWidget: ConstraintLayoutWidget<Object>{
 
     //region 生命周期
 
-    /**
-     * Calling this method from the corresponding method in your activity is required for Google Maps.
-     */
     fun onPause() {
+
         if (mapView != null) {
             mapView!!.pause()
         }
     }
 
-    /**
-     * Calling this method from the corresponding method in your activity is required for Google Maps.
-     */
     fun onResume() {
         if (mapView != null) {
             mapView!!.resume()
         }
     }
 
-
-    /**
-     * Calling this method from the corresponding method in your activity is required for Google Maps.
-     */
     fun onDestroy() {
         if (mapView != null) {
             mapView!!.dispose()
@@ -795,7 +812,7 @@ class ArcGISMapWidget: ConstraintLayoutWidget<Object>{
         kmlDataset.addDoneLoadingListener {
             if(kmlDataset.loadStatus != LoadStatus.LOADED){
                 ToastUtils.showToast("kml 文件加载失败，${kmlDataset.loadError.cause!!.message}")
-                LogUtils.e(TAG, "kml 文件加载失败，${kmlDataset.loadError.cause!!.message}")
+                LogUtils.e(Companion.TAG, "kml 文件加载失败，${kmlDataset.loadError.cause!!.message}")
             }else{
                 widgetFlightMainMenu?.visibility = GONE
                 widgetKmzFlightMenu?.visibility = VISIBLE
@@ -812,11 +829,7 @@ class ArcGISMapWidget: ConstraintLayoutWidget<Object>{
 
     //endregion
 
-    fun setActiveContext(context: Activity){
-        this.activityContext = context
-//        ToastUtils.init(context)
-    }
-
+    //region 地图加载
 
     /**
      * 加载mmpk文件
@@ -845,4 +858,6 @@ class ArcGISMapWidget: ConstraintLayoutWidget<Object>{
         }
 
     }
+
+    //endregion
 }

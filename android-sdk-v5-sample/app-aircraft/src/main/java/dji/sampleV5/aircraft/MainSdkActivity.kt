@@ -73,17 +73,7 @@ open class MainSdkActivity : InitSdkActivity(){
     private var secondaryFPVWidget: FPVWidget? = null
     private var systemStatusListPanelWidget: SystemStatusListPanelWidget? = null
     private var simulatorControlWidget: SimulatorControlWidget? = null
-    private var lensControlWidget: LensControlWidget? = null
-    private var autoExposureLockWidget: AutoExposureLockWidget? = null
-    private var focusModeWidget: FocusModeWidget? = null
-    private var focusExposureSwitchWidget: FocusExposureSwitchWidget? = null
-    private var cameraControlsWidget: CameraControlsWidget? = null
-    private var horizontalSituationIndicatorWidget: HorizontalSituationIndicatorWidget? = null
-    private var exposureSettingsPanel: ExposureSettingsPanel? = null
     private var pfvFlightDisplayWidget: PrimaryFlightDisplayWidget? = null
-    private var ndviCameraPanel: CameraNDVIPanelWidget? = null
-    private var visualCameraPanel: CameraVisiblePanelWidget? = null
-    private var focalZoomWidget: FocalZoomWidget? = null
     private var settingWidget: SettingWidget? = null
     private var mapWidget: ArcGISMapWidget? = null
     private var mSettingPanelWidget: SettingPanelWidget? = null
@@ -112,8 +102,6 @@ open class MainSdkActivity : InitSdkActivity(){
     private var deviceWidth = 0
     private var deviceHeight = 0
 
-    //endregion
-
     private val wayPointV3VM: WayPointV3VM by viewModels()
 
     private var kmzManager:KmzManager? = null
@@ -121,162 +109,197 @@ open class MainSdkActivity : InitSdkActivity(){
     // 加载kml文件监听
     private lateinit var selectFileListener: (String, Int) -> Unit
 
+    //endregion
+
     //region 生命周期
 
     override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        ToastUtils.init(this)
-        setContentView(R.layout.activity_main)
 
-        //region 变量初始化
-        height = DensityUtil.dip2px(this, 120F)
-        width = DensityUtil.dip2px(this, 220F)
-        margin = DensityUtil.dip2px(this, 12F)
+        try {
+            super.onCreate(savedInstanceState)
+            ToastUtils.init(this)
+            setContentView(R.layout.activity_main)
 
-        val windowManager = getSystemService(WINDOW_SERVICE) as WindowManager
-        val display = windowManager.defaultDisplay
-        val outPoint = Point()
-        display.getRealSize(outPoint)
-        deviceHeight = outPoint.y
-        deviceWidth = outPoint.x
+            //region 变量初始化
+            height = DensityUtil.dip2px(this, 120F)
+            width = DensityUtil.dip2px(this, 220F)
+            margin = DensityUtil.dip2px(this, 12F)
 
-        //endregion
+            val windowManager = getSystemService(WINDOW_SERVICE) as WindowManager
+            val display = windowManager.defaultDisplay
+            val outPoint = Point()
+            display.getRealSize(outPoint)
+            deviceHeight = outPoint.y
+            deviceWidth = outPoint.x
 
-        // Setup top bar state callbacks
-        val topBarPanel = findViewById<TopBarPanelWidget>(R.id.panel_top_bar)
-        val systemStatusWidget = topBarPanel.systemStatusWidget
-        if (systemStatusWidget != null) {
-            systemStatusWidget.stateChangeCallback =
-                findViewById(R.id.widget_panel_system_status_list)
-        }
-        val simulatorIndicatorWidget = topBarPanel.simulatorIndicatorWidget
-        if (simulatorIndicatorWidget != null) {
-            simulatorIndicatorWidget.stateChangeCallback =
-                findViewById(R.id.widget_simulator_control)
-        }
-        mDrawerLayout = findViewById(R.id.root_view)
-        settingWidget = topBarPanel.settingWidget
-        primaryFpvWidget = findViewById(R.id.widget_primary_fpv)
-        fpvInteractionWidget = findViewById(R.id.widget_fpv_interaction)
-        secondaryFPVWidget = findViewById(R.id.widget_secondary_fpv)
-        systemStatusListPanelWidget = findViewById(R.id.widget_panel_system_status_list)
-        simulatorControlWidget = findViewById(R.id.widget_simulator_control)
-        pfvFlightDisplayWidget = findViewById(R.id.widget_fpv_flight_display_widget)
-        mapWidget = findViewById(R.id.widget_map)
-        fpvLayout = findViewById(R.id.fpv_holder)
-        mapWidget = findViewById(dji.v5.ux.R.id.widget_map)
-        widgetMainView = findViewById(R.id.widget_mainView)
-        fpvViewExpand = findViewById(R.id.btn_fpvExpand)
+            //endregion
 
-
-
-//        cameraControlsWidget?.exposureSettingsIndicatorWidget
-//            ?.setStateChangeResourceId(R.id.panel_camera_controls_exposure_settings)
-        initClickListener()
-        kmzManager = KmzManager(wayPointV3VM, this)
-        kmzManager?.setDrawLineEvent { points: List<com.esri.arcgisruntime.geometry.Point> -> mapWidget?.addPolyline(points) }
-        mapWidget?.kmzManager = kmzManager
-        selectFileListener = mapWidget?.selectFileListenerEvent!!
-        MediaDataCenter.getInstance().videoStreamManager.addStreamSourcesListener { sources: List<StreamSource>? ->
-            runOnUiThread { updateFPVWidgetSource(sources) }
-        }
-
-
-        primaryFpvWidget?.setOnFPVStreamSourceListener(object : FPVStreamSourceListener {
-            override fun onStreamSourceUpdated(
-                devicePosition: PhysicalDevicePosition,
-                lensType: CameraLensType
-            ) {
-                LogUtils.i(TAG, devicePosition, lensType)
-                cameraSourceProcessor.onNext(CameraSource(devicePosition, lensType))
+            // Setup top bar state callbacks
+            val topBarPanel = findViewById<TopBarPanelWidget>(R.id.panel_top_bar)
+            val systemStatusWidget = topBarPanel.systemStatusWidget
+            if (systemStatusWidget != null) {
+                systemStatusWidget.stateChangeCallback =
+                    findViewById(R.id.widget_panel_system_status_list)
             }
-        })
-        //小surfaceView放置在顶部，避免被大的遮挡
-        secondaryFPVWidget?.setSurfaceViewZOrderOnTop(true)
-        secondaryFPVWidget?.setSurfaceViewZOrderMediaOverlay(true)
+            val simulatorIndicatorWidget = topBarPanel.simulatorIndicatorWidget
+            if (simulatorIndicatorWidget != null) {
+                simulatorIndicatorWidget.stateChangeCallback =
+                    findViewById(R.id.widget_simulator_control)
+            }
+            mDrawerLayout = findViewById(R.id.root_view)
+            settingWidget = topBarPanel.settingWidget
+            primaryFpvWidget = findViewById(R.id.widget_primary_fpv)
+            fpvInteractionWidget = findViewById(R.id.widget_fpv_interaction)
+            secondaryFPVWidget = findViewById(R.id.widget_secondary_fpv)
+            systemStatusListPanelWidget = findViewById(R.id.widget_panel_system_status_list)
+            simulatorControlWidget = findViewById(R.id.widget_simulator_control)
+            pfvFlightDisplayWidget = findViewById(R.id.widget_fpv_flight_display_widget)
+            mapWidget = findViewById(R.id.widget_map)
+            fpvLayout = findViewById(R.id.fpv_holder)
+            mapWidget = findViewById(dji.v5.ux.R.id.widget_map)
+            widgetMainView = findViewById(R.id.widget_mainView)
+            fpvViewExpand = findViewById(R.id.btn_fpvExpand)
 
-        // 地图初始化
+
+            initClickListener()
+            kmzManager = KmzManager(wayPointV3VM, this)
+            kmzManager?.setDrawLineEvent { points: List<com.esri.arcgisruntime.geometry.Point> -> mapWidget?.addPolyline(points) }
+            mapWidget?.kmzManager = kmzManager
+            selectFileListener = mapWidget?.selectFileListenerEvent!!
+            MediaDataCenter.getInstance().videoStreamManager.addStreamSourcesListener { sources: List<StreamSource>? ->
+                runOnUiThread { updateFPVWidgetSource(sources) }
+            }
 
 
-//        mapWidget.initAMap(OnMapReadyListener { map: DJIMap ->
-//            // map.setOnMapClickListener(latLng -> onViewClick(mapWidget));
-//            val uiSetting = map.uiSettings
-//            // 设置地图缩放控件
-//            uiSetting?.setZoomControlsEnabled(false)
-//            // 设置罗盘控件
-//            uiSetting?.setCompassEnabled(true)
-//
-//            uiSetting?.setMyLocationButtonEnabled(true)
-//
-//            //uiSetting?.setTiltGesturesEnabled(true)
-//        })
+            primaryFpvWidget?.setOnFPVStreamSourceListener(object : FPVStreamSourceListener {
+                override fun onStreamSourceUpdated(
+                    devicePosition: PhysicalDevicePosition,
+                    lensType: CameraLensType
+                ) {
+                    LogUtils.i(TAG, devicePosition, lensType)
+                    cameraSourceProcessor.onNext(CameraSource(devicePosition, lensType))
+                }
+            })
+            //小surfaceView放置在顶部，避免被大的遮挡
+            secondaryFPVWidget?.setSurfaceViewZOrderOnTop(true)
+            secondaryFPVWidget?.setSurfaceViewZOrderMediaOverlay(true)
+            mapWidget?.setWidgetModel(getProductInstance())
+            mapWidget?.setActiveContext(this)
 
-        mapWidget?.setWidgetModel(getProductInstance())
-        mapWidget?.setActiveContext(this)
+        }catch (e:Exception){
+            ToastUtils.showToast("页面初始化异常，${e.message}")
+            LogUtils.e(TAG, "页面初始化异常，${e.message}，${e.stackTraceToString()}")
+        }
 
     }
 
     override fun onResume() {
-        super.onResume()
-        mapWidget?.onResume()
 
-        compositeDisposable = CompositeDisposable()
-        compositeDisposable!!.add(
-            systemStatusListPanelWidget!!.closeButtonPressed()
-                .observeOn(AndroidSchedulers.mainThread())
-                .subscribe { pressed: Boolean ->
-                    if (pressed) {
-                        systemStatusListPanelWidget!!.hide()
-                    }
-                })
-        compositeDisposable!!.add(
-            simulatorControlWidget!!.getUIStateUpdates()
-                .observeOn(AndroidSchedulers.mainThread())
-                .subscribe { simulatorControlWidgetState: SimulatorControlWidget.UIState? ->
-                    if (simulatorControlWidgetState is SimulatorControlWidget.UIState.VisibilityUpdated) {
-                        if (simulatorControlWidgetState.isVisible) {
-                            hideOtherPanels(simulatorControlWidget)
+        try {
+            super.onResume()
+            mapWidget?.onResume()
+
+            compositeDisposable = CompositeDisposable()
+            compositeDisposable!!.add(
+                systemStatusListPanelWidget!!.closeButtonPressed()
+                    .observeOn(AndroidSchedulers.mainThread())
+                    .subscribe { pressed: Boolean ->
+                        if (pressed) {
+                            systemStatusListPanelWidget!!.hide()
                         }
-                    }
-                })
-        compositeDisposable!!.add(cameraSourceProcessor.toFlowable()
-            .observeOn(computation())
-            .throttleLast(500, TimeUnit.MILLISECONDS)
-            .subscribe { result: CameraSource ->
-                runOnUiThread { onCameraSourceUpdated(result.devicePosition, result.lensType) }
-            }
-        )
+                    })
+            compositeDisposable!!.add(
+                simulatorControlWidget!!.getUIStateUpdates()
+                    .observeOn(AndroidSchedulers.mainThread())
+                    .subscribe { simulatorControlWidgetState: SimulatorControlWidget.UIState? ->
+                        if (simulatorControlWidgetState is SimulatorControlWidget.UIState.VisibilityUpdated) {
+                            if (simulatorControlWidgetState.isVisible) {
+                                hideOtherPanels(simulatorControlWidget)
+                            }
+                        }
+                    })
+            compositeDisposable!!.add(cameraSourceProcessor.toFlowable()
+                .observeOn(computation())
+                .throttleLast(500, TimeUnit.MILLISECONDS)
+                .subscribe { result: CameraSource ->
+                    runOnUiThread { onCameraSourceUpdated(result.devicePosition, result.lensType) }
+                }
+            )
+        }catch (e:Exception){
+            ToastUtils.showToast("onResume异常，${e.message}")
+            LogUtils.e(TAG, "onResume异常，${e.message},${e.stackTraceToString()}")
+        }
+
     }
 
     override fun onPause() {
-        if (compositeDisposable != null) {
-            compositeDisposable!!.dispose()
-            compositeDisposable = null
+        try {
+            if (compositeDisposable != null) {
+                compositeDisposable!!.dispose()
+                compositeDisposable = null
+            }
+            mapWidget?.onPause()
+            super.onPause()
+        }catch (e:Exception){
+            ToastUtils.showToast("onPause异常，${e.message}")
+            LogUtils.e(TAG, "onPause异常，${e.message},${e.stackTraceToString()}")
         }
-        mapWidget?.onPause()
-        super.onPause()
+
     }
 
     override fun onDestroy() {
-        super.onDestroy()
-        mapWidget?.onDestroy()
+        try {
+            super.onDestroy()
+            mapWidget?.onDestroy()
 
-        MediaDataCenter.getInstance().videoStreamManager.clearAllStreamSourcesListeners()
-        removeChannelStateListener()
+            MediaDataCenter.getInstance().videoStreamManager.clearAllStreamSourcesListeners()
+            removeChannelStateListener()
+        }catch (e:Exception){
+            ToastUtils.showToast("onDestroy异常，${e.message}")
+            LogUtils.e(TAG, "onDestroy异常，${e.message},${e.stackTraceToString()}")
+        }
     }
 
     //endregion
 
-    //region 视图控件初始化
+    //region 事件初始化
     private fun initClickListener() {
-        secondaryFPVWidget?.setOnClickListener { v: View? -> swapVideoSource() }
+        secondaryFPVWidget?.setOnClickListener { v: View? ->
+            try{
+                swapVideoSource()
+            }catch (e:Exception){
+                LogUtils.e(TAG, "secondaryFPVClick异常，${e.message}, ${e.stackTraceToString()}")
+            }
+        }
+
         initChannelStateListener()
 
-        settingWidget?.setOnClickListener { v: View? -> toggleRightDrawer() }
+        settingWidget?.setOnClickListener { v: View? ->
+            try{
+                toggleRightDrawer()
+            }catch (e:Exception){
+                ToastUtils.showToast("打开设置错误，${e.message}")
+                LogUtils.e(TAG, "打开设置异常，${e.message}, ${e.stackTraceToString()}")
+            }
+        }
 
-        mapWidget?.setExpandMapClickListener{v: View? -> onViewClick(mapWidget!!)}
+        mapWidget?.setExpandMapClickListener{v: View? ->
+            try{
+                onViewClick(mapWidget!!)
+            }catch (e: Exception){
+                ToastUtils.showToast("展开地图错误，${e.message}")
+                LogUtils.e(TAG, "展开地图异常，${e.message}, ${e.stackTraceToString()}")
+            }
+        }
 
-        fpvViewExpand?.setOnClickListener{v: View? -> onViewClick(fpvLayout!!)}
+        fpvViewExpand?.setOnClickListener{v: View? ->
+            try{
+                onViewClick(fpvLayout!!)
+            }catch (e: Exception){
+                ToastUtils.showToast("展开视图窗口错误，${e.message}")
+                LogUtils.e(TAG, "展开视图窗口错误，${e.message}, ${e.stackTraceToString()}")
+            }
+        }
 
     }
 
@@ -333,45 +356,50 @@ open class MainSdkActivity : InitSdkActivity(){
     }
 
     private fun initChannelStateListener() {
-        val primaryChannel =
-            MediaDataCenter.getInstance().videoStreamManager.getAvailableVideoChannel(
-                VideoChannelType.PRIMARY_STREAM_CHANNEL
-            )
-        val secondaryChannel =
-            MediaDataCenter.getInstance().videoStreamManager.getAvailableVideoChannel(
-                VideoChannelType.SECONDARY_STREAM_CHANNEL
-            )
-        if (primaryChannel != null) {
-            primaryChannelStateListener =
-                VideoChannelStateChangeListener { from: VideoChannelState?, to: VideoChannelState ->
-                    val primaryStreamSource =
-                        primaryChannel.streamSource
-                    if (VideoChannelState.ON == to && primaryStreamSource != null) {
-                        runOnUiThread {
-                            primaryFpvWidget!!.updateVideoSource(
-                                primaryStreamSource,
-                                VideoChannelType.PRIMARY_STREAM_CHANNEL
-                            )
+        try{
+            val primaryChannel =
+                MediaDataCenter.getInstance().videoStreamManager.getAvailableVideoChannel(
+                    VideoChannelType.PRIMARY_STREAM_CHANNEL
+                )
+            val secondaryChannel =
+                MediaDataCenter.getInstance().videoStreamManager.getAvailableVideoChannel(
+                    VideoChannelType.SECONDARY_STREAM_CHANNEL
+                )
+            if (primaryChannel != null) {
+                primaryChannelStateListener =
+                    VideoChannelStateChangeListener { from: VideoChannelState?, to: VideoChannelState ->
+                        val primaryStreamSource =
+                            primaryChannel.streamSource
+                        if (VideoChannelState.ON == to && primaryStreamSource != null) {
+                            runOnUiThread {
+                                primaryFpvWidget!!.updateVideoSource(
+                                    primaryStreamSource,
+                                    VideoChannelType.PRIMARY_STREAM_CHANNEL
+                                )
+                            }
                         }
                     }
-                }
-            primaryChannel.addVideoChannelStateChangeListener(primaryChannelStateListener)
-        }
-        if (secondaryChannel != null) {
-            secondaryChannelStateListener =
-                VideoChannelStateChangeListener { from: VideoChannelState?, to: VideoChannelState ->
-                    val secondaryStreamSource =
-                        secondaryChannel.streamSource
-                    if (VideoChannelState.ON == to && secondaryStreamSource != null) {
-                        runOnUiThread {
-                            secondaryFPVWidget!!.updateVideoSource(
-                                secondaryStreamSource,
-                                VideoChannelType.SECONDARY_STREAM_CHANNEL
-                            )
+                primaryChannel.addVideoChannelStateChangeListener(primaryChannelStateListener)
+            }
+            if (secondaryChannel != null) {
+                secondaryChannelStateListener =
+                    VideoChannelStateChangeListener { from: VideoChannelState?, to: VideoChannelState ->
+                        val secondaryStreamSource =
+                            secondaryChannel.streamSource
+                        if (VideoChannelState.ON == to && secondaryStreamSource != null) {
+                            runOnUiThread {
+                                secondaryFPVWidget!!.updateVideoSource(
+                                    secondaryStreamSource,
+                                    VideoChannelType.SECONDARY_STREAM_CHANNEL
+                                )
+                            }
                         }
                     }
-                }
-            secondaryChannel.addVideoChannelStateChangeListener(secondaryChannelStateListener)
+                secondaryChannel.addVideoChannelStateChangeListener(secondaryChannelStateListener)
+            }
+        }catch (e: Exception){
+            ToastUtils.showToast("视频初始化错误，${e.message}")
+            LogUtils.e(TAG, "视频初始化错误，${e.message}, ${e.stackTraceToString()}")
         }
     }
 
@@ -396,16 +424,6 @@ open class MainSdkActivity : InitSdkActivity(){
         val cameraIndex = CameraUtil.getCameraIndex(devicePosition)
         fpvInteractionWidget!!.updateCameraSource(cameraIndex, lensType!!)
         fpvInteractionWidget!!.updateGimbalIndex(CommonUtils.getGimbalIndex(devicePosition))
-//        lensControlWidget!!.updateCameraSource(cameraIndex, lensType)
-//        ndviCameraPanel!!.updateCameraSource(cameraIndex, lensType)
-//        visualCameraPanel!!.updateCameraSource(cameraIndex, lensType)
-//        autoExposureLockWidget!!.updateCameraSource(cameraIndex, lensType)
-//        focusModeWidget!!.updateCameraSource(cameraIndex, lensType)
-//        focusExposureSwitchWidget!!.updateCameraSource(cameraIndex, lensType)
-//        cameraControlsWidget!!.updateCameraSource(cameraIndex, lensType)
-//        exposureSettingsPanel!!.updateCameraSource(cameraIndex, lensType)
-//        focalZoomWidget!!.updateCameraSource(cameraIndex, lensType)
-//        horizontalSituationIndicatorWidget!!.updateCameraSource(cameraIndex, lensType)
         updateViewVisibility(devicePosition, lensType)
         updateInteractionEnabled()
     }
@@ -457,8 +475,6 @@ open class MainSdkActivity : InitSdkActivity(){
     }
 
     //endregion
-
-    //region 其它方法
 
     //region 地图 - 视频 视图切换
 
@@ -537,49 +553,48 @@ open class MainSdkActivity : InitSdkActivity(){
         permissions: Array<out String>,
         grantResults: IntArray
     ) {
-        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+        try {
+            super.onRequestPermissionsResult(requestCode, permissions, grantResults)
 
-        // 开启定位
-        if (grantResults.isEmpty() ||
-            grantResults[0] != PackageManager.PERMISSION_GRANTED ||
-            (Manifest.permission.ACCESS_FINE_LOCATION !in permissions) ||
-            (Manifest.permission.ACCESS_COARSE_LOCATION !in permissions)) {
+            // 开启定位
+            if (grantResults.isEmpty() ||
+                grantResults[0] != PackageManager.PERMISSION_GRANTED ||
+                (Manifest.permission.ACCESS_FINE_LOCATION !in permissions) ||
+                (Manifest.permission.ACCESS_COARSE_LOCATION !in permissions)) {
 
-            ToastUtils.showToast("定位未开启或没有权限")
-            LogUtils.e("定位权限未开启")
+                ToastUtils.showToast("定位未开启或没有权限")
+                LogUtils.e("定位权限未开启")
 
+            }
+        }catch (e:Exception){
+            ToastUtils.showToast("权限检查异常，${e.message}")
+            LogUtils.e(TAG, "权限检查异常，${e.message},${e.stackTraceToString()}")
         }
+
     }
 
     //endregion
 
-    // region 飞机定位
-
-
-    //endregion
-
-    //endregion
+    //region 文件选择
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
-        super.onActivityResult(requestCode, resultCode, data)
+        try {
+            super.onActivityResult(requestCode, resultCode, data)
 
-        var context = this
-        if(resultCode == RESULT_OK){
-            //        switch(requestCode){
-//              case FileUtil.KmlSelectResponseCode:
-//              Uri uri=data.getData();
-//               chooseFilePath=FileChooseUtil.getInstance(this).getChooseFileResultPath(uri);
-//              Log.d(TAG,"选择文件返回："+chooseFilePath);
-//              sendFileMessage(chooseFilePath);
-//               break;
-//        }
-            var uri = data?.data
-            var path = FileUtil.getChooseFileResultPath(context, uri!!)
-            selectFileListener(path!!, requestCode)
+            var context = this
+            if(resultCode == RESULT_OK){
+                var uri = data?.data
+                var path = FileUtil.getFileAbsolutePath(context, uri!!)
+                LogUtils.d(TAG,"已选择文件：${path}")
+                selectFileListener(path!!, requestCode)
 
+            }
+        }catch (e:Exception){
+            ToastUtils.showToast("文件选择异常，${e.message}")
+            LogUtils.e(TAG, "文件选择异常，${e.message},${e.stackTraceToString()}")
         }
 
     }
 
-
+    //endregion
 }

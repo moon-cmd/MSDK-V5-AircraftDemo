@@ -44,6 +44,7 @@ abstract class InitSdkActivity : AppCompatActivity(){
         Manifest.permission.KILL_BACKGROUND_PROCESSES,
         Manifest.permission.ACCESS_COARSE_LOCATION,
         Manifest.permission.ACCESS_FINE_LOCATION,
+//        Manifest.permission.MANAGE_EXTERNAL_STORAGE
     )
 
     override fun onCreate(savedInstanceState: Bundle?) {

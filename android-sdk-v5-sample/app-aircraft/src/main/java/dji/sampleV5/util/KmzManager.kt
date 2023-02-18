@@ -97,39 +97,45 @@ class KmzManager{
      * 航线文件初始化
      */
     private fun initKmzFile(){
-        // 移动模板文件到临时目录
-        val dir = File(rootDir)
-        if (!dir.exists()) {
-            dir.mkdirs()
-        }
-        val cacheDirName = DiskUtil.getExternalCacheDirPath(
-            ContextUtil.getContext(),
-            WAYPOINT_SAMPLE_FILE_CACHE_DIR
-        )
-        val cacheDir = File(cacheDirName)
-
-        if (!cacheDir.exists()) {
-            cacheDir.mkdirs()
-        }
-        val destPath = rootDir + WAYPOINT_SAMPLE_FILE_NAME
-        if (!File(destPath).exists()) {
-            FileUtils.copyAssetsFile(
+        try {
+            // 移动模板文件到临时目录
+            val dir = File(rootDir)
+            if (!dir.exists()) {
+                dir.mkdirs()
+            }
+            val cacheDirName = DiskUtil.getExternalCacheDirPath(
                 ContextUtil.getContext(),
-                WAYPOINT_SAMPLE_FILE_NAME,
-                destPath
+                WAYPOINT_SAMPLE_FILE_CACHE_DIR
             )
-        }
-        // 解压航线文件
-        val unzipFolder = File(rootDir, unzipChildDir)
-        WPMZParserManager.unZipFolder(ContextUtil.getContext(), curMissionPath, unzipFolder.path, false)
+            val cacheDir = File(cacheDirName)
 
-        templateFilePath = rootDir + unzipChildDir + unzipDir + WPMZParserManager.TEMPLATE_FILE
-        waylineFilePath = rootDir + unzipChildDir + unzipDir + WPMZParserManager.WAYLINE_FILE
+            if (!cacheDir.exists()) {
+                cacheDir.mkdirs()
+            }
+            val destPath = rootDir + WAYPOINT_SAMPLE_FILE_NAME
+            if (!File(destPath).exists()) {
+                FileUtils.copyAssetsFile(
+                    ContextUtil.getContext(),
+                    WAYPOINT_SAMPLE_FILE_NAME,
+                    destPath
+                )
+            }
+            // 解压航线文件
+            val unzipFolder = File(rootDir, unzipChildDir)
+            WPMZParserManager.unZipFolder(ContextUtil.getContext(), curMissionPath, unzipFolder.path, false)
 
-        // 航线初始化
-        for (waylineID in wayPointV3VM.getAvailableWaylineIDs(curMissionPath)){
-            selectWaylines.add(waylineID)
+            templateFilePath = rootDir + unzipChildDir + unzipDir + WPMZParserManager.TEMPLATE_FILE
+            waylineFilePath = rootDir + unzipChildDir + unzipDir + WPMZParserManager.WAYLINE_FILE
+
+            // 航线初始化
+            for (waylineID in wayPointV3VM.getAvailableWaylineIDs(curMissionPath)){
+                selectWaylines.add(waylineID)
+            }
+        }catch (e:Exception){
+            ToastUtils.showToast("航线文件初始化失败，${e.message}")
+            LogUtils.e(TAG, "航线文件初始化异常，${e.message},${e.stackTraceToString()}")
         }
+
 
     }
 
