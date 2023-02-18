@@ -5,7 +5,7 @@ import android.app.Activity
 import android.content.Context
 import android.content.Intent
 import android.graphics.Color
-import android.graphics.drawable.Drawable
+import android.graphics.drawable.BitmapDrawable
 import android.util.AttributeSet
 import android.view.MotionEvent
 import android.view.View
@@ -22,6 +22,7 @@ import com.esri.arcgisruntime.mapping.*
 import com.esri.arcgisruntime.mapping.view.*
 import com.esri.arcgisruntime.mapping.view.LocationDisplay.DataSourceStatusChangedListener
 import com.esri.arcgisruntime.ogc.kml.*
+import com.esri.arcgisruntime.symbology.PictureMarkerSymbol
 import com.esri.arcgisruntime.symbology.SimpleLineSymbol
 import com.esri.arcgisruntime.symbology.SimpleMarkerSymbol
 import dji.sampleV5.aircraft.BuildConfig
@@ -29,22 +30,22 @@ import dji.sampleV5.aircraft.R
 import dji.sampleV5.util.DialogUtil
 import dji.sampleV5.util.FileUtil
 import dji.sampleV5.util.KmzManager
+import dji.sdk.keyvalue.key.FlightControllerKey
+import dji.sdk.keyvalue.key.KeyTools
 import dji.sdk.keyvalue.value.common.LocationCoordinate2D
 import dji.sdk.keyvalue.value.common.LocationCoordinate3D
 import dji.v5.common.callback.CommonCallbacks
 import dji.v5.common.error.IDJIError
+import dji.v5.manager.KeyManager
 import dji.v5.utils.common.LogUtils
 import dji.v5.utils.common.ToastUtils
 import dji.v5.ux.core.base.SchedulerProvider.ui
 import dji.v5.ux.core.base.widget.ConstraintLayoutWidget
-import dji.v5.ux.map.MapWidget.MapCenterLock
 import dji.v5.ux.map.MapWidgetModel
 import dji.v5.ux.mapkit.core.models.DJILatLng
-import dji.v5.ux.mapkit.core.models.annotations.DJIMarker
 import io.reactivex.rxjava3.disposables.Disposable
 import kotlinx.android.synthetic.main.arcgis_map_widget.view.*
 import java.util.concurrent.ExecutionException
-import kotlin.math.abs
 import kotlin.math.roundToInt
 
 
@@ -102,6 +103,10 @@ class ArcGISMapWidget: ConstraintLayoutWidget<Object>{
 
     // 已选择kml图形
     private var selectKmlElement: ArrayList<KmlPlacemark> = ArrayList()
+
+    // 飞机位置
+    private var aircraftMark: Graphic? = null
+    private var aircraftMarkerSymbol: PictureMarkerSymbol? = null
 
     // 航线管理
      var kmzManager: KmzManager? = null
@@ -170,13 +175,13 @@ class ArcGISMapWidget: ConstraintLayoutWidget<Object>{
             inflate(context, R.layout.arcgis_map_widget, this)
 
             // 初始化一些变量值
-            initVariable()
+            initVariable(attrs)
             // 地图初始化
             initMap(context)
             // 控件初始化
             initWidget()
             // 初始化事件
-            initListenerEvent(context)
+            initListenerEvent(context,attrs)
 
         }catch (e:Exception){
             ToastUtils.showToast("地图初始化异常，${e.message}")
@@ -188,8 +193,17 @@ class ArcGISMapWidget: ConstraintLayoutWidget<Object>{
     /**
      * 初始化一些变量值
      */
-    private fun initVariable(){
+    private fun initVariable(attrs: AttributeSet?){
         graphicsOverlay = GraphicsOverlay()
+        try {
+            val typedArray = context.obtainStyledAttributes(attrs, dji.v5.ux.R.styleable.MapWidget)
+            var drawable = typedArray.getDrawable(dji.v5.ux.R.styleable.MapWidget_uxsdk_aircraftMarkerIcon)
+            aircraftMarkerSymbol = PictureMarkerSymbol.createAsync(drawable as BitmapDrawable).get()
+
+        }catch (e: Exception){
+            LogUtils.e(TAG, "变量初始化异常，${e.message},${e.stackTraceToString()}")
+        }
+
     }
 
     @SuppressLint("ClickableViewAccessibility")
@@ -246,7 +260,34 @@ class ArcGISMapWidget: ConstraintLayoutWidget<Object>{
      * 控件事件初始化
      */
     @SuppressLint("ClickableViewAccessibility")
-    private fun initListenerEvent(context: Context){
+    private fun initListenerEvent(context: Context, attrs: AttributeSet?){
+
+        // 飞机位置更新
+        KeyManager.getInstance().listen(
+            KeyTools.createKey(FlightControllerKey.KeyAircraftLocation),this
+        ){_,newValue ->
+
+            try {
+                newValue?.let {
+                    // 更新位置
+                    if(aircraftMark == null){
+
+
+                        var postion = Point(it.getLongitude(), it.getLatitude(),SpatialReferences.getWgs84())
+                        var graphicsOverlay = GraphicsOverlay()
+                        aircraftMark = com.esri.arcgisruntime.mapping.view.Graphic(postion, aircraftMarkerSymbol)
+                        graphicsOverlay?.graphics.add(aircraftMark)
+
+                        mapView!!.graphicsOverlays.add(graphicsOverlay)
+                    }else{
+                        aircraftMark?.geometry =  Point(it.getLongitude(), it.getLatitude(),SpatialReferences.getWgs84())
+                    }
+                }
+            }catch (e: Exception){
+                LogUtils.e("飞机位置更新异常，${e.message}，${e.stackTraceToString()}")
+            }
+        }
+
 
         // 加载mmpk地图
         btnLoadMmpkMap?.setOnClickListener {
@@ -330,22 +371,6 @@ class ArcGISMapWidget: ConstraintLayoutWidget<Object>{
                                     selectKmlElement.add(geoElement)
 
                                     if(!allowMulSelect) break
-
-//                                val placemark = geoElement
-//                                // Google Earth only displays the placemarks with description or extended data. To
-//                                // match its behavior, add a description placeholder if the data source is empty
-//                                if (placemark.description.isEmpty()) {
-//                                    placemark.description = "Weather condition"
-//                                }
-//                                val calloutContent = TextView(activityContext)
-//                                calloutContent.text = Html.fromHtml(placemark.balloonContent)
-//
-//                                // get callout, set content and show
-//                                val callout = mMapView.callout
-//                                callout.location = mMapView.screenToLocation(point)
-//                                callout.content = calloutContent
-//                                callout.show()
-//                                break
                                 }
 
                             }catch (error: java.lang.Exception){
@@ -665,7 +690,7 @@ class ArcGISMapWidget: ConstraintLayoutWidget<Object>{
         if (mapView == null || !homePosition.isAvailable) return
 
         // 地图上标记起飞点
-        addMarker(homeLocation.getLongitude(), homeLocation.getLatitude(), null)
+//        addMarker(homeLocation.getLongitude(), homeLocation.getLatitude(), null)
     }
 
     //endregion
@@ -685,6 +710,18 @@ class ArcGISMapWidget: ConstraintLayoutWidget<Object>{
 
     private fun updateAircraftLocation(locationCoordinate3D: LocationCoordinate3D) {
         if (mapView == null) return
+
+        // 更新位置
+        if(aircraftMark == null){
+            var postion = Point(locationCoordinate3D.getLongitude(), locationCoordinate3D.getLatitude(),SpatialReferences.getWgs84())
+            var graphicsOverlay = GraphicsOverlay()
+            aircraftMark = com.esri.arcgisruntime.mapping.view.Graphic(postion, aircraftMarkerSymbol)
+            graphicsOverlay?.graphics.add(aircraftMark)
+
+            mapView!!.graphicsOverlays.add(graphicsOverlay)
+        }else{
+            aircraftMark?.geometry =  Point(locationCoordinate3D.getLongitude(), locationCoordinate3D.getLatitude(),SpatialReferences.getWgs84())
+        }
     }
 
     //endregion
@@ -861,3 +898,4 @@ class ArcGISMapWidget: ConstraintLayoutWidget<Object>{
 
     //endregion
 }
+
