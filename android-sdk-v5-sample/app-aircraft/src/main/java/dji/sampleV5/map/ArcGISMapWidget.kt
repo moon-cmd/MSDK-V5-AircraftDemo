@@ -4,6 +4,7 @@ import android.annotation.SuppressLint
 import android.app.Activity
 import android.content.Context
 import android.content.Intent
+import android.graphics.BitmapFactory
 import android.graphics.Color
 import android.graphics.drawable.BitmapDrawable
 import android.util.AttributeSet
@@ -196,9 +197,12 @@ class ArcGISMapWidget: ConstraintLayoutWidget<Object>{
     private fun initVariable(attrs: AttributeSet?){
         graphicsOverlay = GraphicsOverlay()
         try {
-            val typedArray = context.obtainStyledAttributes(attrs, dji.v5.ux.R.styleable.MapWidget)
-            var drawable = typedArray.getDrawable(dji.v5.ux.R.styleable.MapWidget_uxsdk_aircraftMarkerIcon)
-            aircraftMarkerSymbol = PictureMarkerSymbol.createAsync(drawable as BitmapDrawable).get()
+//            val typedArray = context.obtainStyledAttributes(attrs, dji.v5.ux.R.styleable.MapWidget)
+//            var drawable = typedArray.getDrawable(dji.v5.ux.R.styleable.MapWidget_uxsdk_aircraftMarkerIcon)
+
+            var bitmap = BitmapFactory.decodeResource(resources, R.drawable.plane)
+            var bitmapDrawable = BitmapDrawable(resources, bitmap)
+            aircraftMarkerSymbol = PictureMarkerSymbol.createAsync(bitmapDrawable).get()
 
         }catch (e: Exception){
             LogUtils.e(TAG, "变量初始化异常，${e.message},${e.stackTraceToString()}")
