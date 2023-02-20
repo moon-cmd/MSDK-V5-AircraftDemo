@@ -5,6 +5,7 @@ import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.LifecycleOwner
 import com.amap.api.maps.model.Poi
+import com.elvishew.xlog.XLog
 import com.esri.arcgisruntime.geometry.Point
 import com.esri.arcgisruntime.geometry.SpatialReference
 import com.esri.arcgisruntime.geometry.SpatialReferences
@@ -130,7 +131,7 @@ class KmzManager{
             }
         }catch (e:Exception){
             ToastUtils.showToast("航线文件初始化失败，${e.message}")
-            LogUtils.e(TAG, "航线文件初始化异常，${e.message},${e.stackTraceToString()}")
+            XLog.e(TAG, "航线文件初始化异常，${e.message},${e.stackTraceToString()}")
         }
 
 
@@ -144,14 +145,14 @@ class KmzManager{
         // 状态监听
         wayPointV3VM?.addMissionStateListener() {
             curMissionExecuteState = it
-            LogUtils.i(TAG, "执行状况：${it.name}")
+            XLog.i(TAG, "执行状况：${it.name}")
         }
         // 添加航线监听
         wayPointV3VM?.addWaylineExecutingInfoListener() {
-            LogUtils.i(TAG, "航线信息：")
-            LogUtils.i(TAG, "航线ID：${it.waylineID}")
-            LogUtils.i(TAG, "航线索引：${it.currentWaypointIndex}")
-            LogUtils.i(TAG, "航线名称：${if (curMissionExecuteState == WaypointMissionExecuteState.READY) "" else it.missionFileName}")
+            XLog.i(TAG, "航线信息：")
+            XLog.i(TAG, "航线ID：${it.waylineID}")
+            XLog.i(TAG, "航线索引：${it.currentWaypointIndex}")
+            XLog.i(TAG, "航线名称：${if (curMissionExecuteState == WaypointMissionExecuteState.READY) "" else it.missionFileName}")
 
         }
 
@@ -161,14 +162,14 @@ class KmzManager{
                 it?.let {
                     when {
                         it.error != null -> {
-                            LogUtils.i(TAG, "航线上传失败，${getErrorMsg(it.error!!)}")
+                            XLog.i(TAG, "航线上传失败，${getErrorMsg(it.error!!)}")
                         }
                         it.tips.isNotEmpty() -> {
 //                            mission_upload_state_tv?.text = it.tips
-                            LogUtils.i(TAG, "上传提示，${it.tips}")
+                            XLog.i(TAG, "上传提示，${it.tips}")
                         }
                         else -> {
-                            LogUtils.i(TAG, "上传进度，${it.updateProgress}")
+                            XLog.i(TAG, "上传进度，${it.updateProgress}")
                         }
                     }
 
@@ -181,8 +182,8 @@ class KmzManager{
         viewLifecycleOwner?.let { it ->
             wayPointV3VM?.flightControlState?.observe(it) { it ->
                 it?.let {
-                    LogUtils.i(TAG,"航高：${it.height}")
-                    LogUtils.i(TAG,"距离：${it.distance}")
+                    XLog.i(TAG,"航高：${it.height}")
+                    XLog.i(TAG,"距离：${it.distance}")
                     // 设置起点
                     homeLocation = (Point(it.homeLocation.longitude, it.homeLocation.getLatitude(), flightHeight))
                 }
@@ -222,12 +223,12 @@ class KmzManager{
             object : CommonCallbacks.CompletionCallback {
                 override fun onSuccess() {
 //                    ToastUtils.showToast("startMission Success")
-                    LogUtils.i(TAG,"航线执行成功")
+                    XLog.i(TAG,"航线执行成功")
                 }
 
                 override fun onFailure(error: IDJIError) {
 //                    ToastUtils.showToast("startMission Failed " + getErroMsg(error))
-                    LogUtils.i(TAG,"航线执行失败：${getErrorMsg(error)}")
+                    XLog.i(TAG,"航线执行失败：${getErrorMsg(error)}")
                 }
             })
 
@@ -240,12 +241,12 @@ class KmzManager{
         wayPointV3VM?.pauseMission(object : CommonCallbacks.CompletionCallback {
             override fun onSuccess() {
 //                ToastUtils.showToast("pauseMission Success")
-                LogUtils.i(TAG, "航线任务中止成功")
+                XLog.i(TAG, "航线任务中止成功")
             }
 
             override fun onFailure(error: IDJIError) {
                 ToastUtils.showToast("pauseMission Failed " + getErrorMsg(error))
-                LogUtils.i(TAG, "航线任务中止失败：${getErrorMsg(error)}")
+                XLog.i(TAG, "航线任务中止失败：${getErrorMsg(error)}")
             }
         })
     }
@@ -257,12 +258,12 @@ class KmzManager{
         wayPointV3VM?.resumeMission(object : CommonCallbacks.CompletionCallback {
             override fun onSuccess() {
 //                ToastUtils.showToast("resumeMission Success")
-                LogUtils.i(TAG, "航线任务开始继续执行...")
+                XLog.i(TAG, "航线任务开始继续执行...")
             }
 
             override fun onFailure(error: IDJIError) {
 //                ToastUtils.showToast("resumeMission Failed " + getErroMsg(error))
-                LogUtils.e(TAG, "航线任务继续执行失败，${getErrorMsg(error)}")
+                XLog.e(TAG, "航线任务继续执行失败，${getErrorMsg(error)}")
             }
         })
     }
@@ -273,7 +274,7 @@ class KmzManager{
     fun stopTask(){
         if (curMissionExecuteState == WaypointMissionExecuteState.READY) {
             ToastUtils.showToast("未找到航线任务")
-            LogUtils.i(TAG, "未找到航线任务")
+            XLog.i(TAG, "未找到航线任务")
             return
         }
         wayPointV3VM?.stopMission(
@@ -285,7 +286,7 @@ class KmzManager{
 
                 override fun onFailure(error: IDJIError) {
                     ToastUtils.showToast("航线任务停止失败， " + getErrorMsg(error))
-                    LogUtils.e(TAG, "航线任务停止失败，${getErrorMsg(error)}")
+                    XLog.e(TAG, "航线任务停止失败，${getErrorMsg(error)}")
                 }
             })
     }
@@ -358,12 +359,12 @@ class KmzManager{
             object: CommonCallbacks.CompletionCallback{
                 override fun onSuccess() {
                     // 设置成功
-                    LogUtils.i("仿地飞行已开启")
+                    XLog.i("仿地飞行已开启")
                 }
 
                 override fun onFailure(error: IDJIError) {
                     // 设置失败
-                    LogUtils.e("仿地飞行开启失败")
+                    XLog.e("仿地飞行开启失败")
                 }
 
             });

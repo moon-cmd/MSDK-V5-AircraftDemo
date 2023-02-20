@@ -12,7 +12,6 @@ import android.widget.LinearLayout
 import android.widget.TextView
 import dji.sampleV5.aircraft.R
 import dji.v5.common.callback.CommonCallbacks
-import dji.v5.common.error.IDJIError
 
 object DialogUtil {
 
@@ -22,7 +21,7 @@ object DialogUtil {
         kmzManager: KmzManager?,
         callback: CommonCallbacks.CompletionCallbackWithParam<KmzManager>
     ){
-        val dialogView: View = context.layoutInflater.inflate(R.layout.flight_basic_info, null)
+        val dialogView: View = context.layoutInflater.inflate(R.layout.widget_flight_basic_info, null)
 //        dialogView.setBackgroundColor(context.resources.getColor(R.color.gray))
         val dialog = AlertDialog.Builder(context).setView(dialogView).create()
         dialog!!.setCanceledOnTouchOutside(false)

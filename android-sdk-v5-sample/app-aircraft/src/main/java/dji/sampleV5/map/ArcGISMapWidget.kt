@@ -15,6 +15,7 @@ import android.widget.Button
 import android.widget.ImageButton
 import android.widget.LinearLayout
 import androidx.annotation.Nullable
+import com.elvishew.xlog.XLog
 import com.esri.arcgisruntime.ArcGISRuntimeEnvironment
 import com.esri.arcgisruntime.geometry.*
 import com.esri.arcgisruntime.layers.KmlLayer
@@ -27,10 +28,7 @@ import com.esri.arcgisruntime.symbology.PictureMarkerSymbol
 import com.esri.arcgisruntime.symbology.SimpleLineSymbol
 import com.esri.arcgisruntime.symbology.SimpleMarkerSymbol
 import dji.sampleV5.aircraft.BuildConfig
-import dji.sampleV5.aircraft.InitSdkActivity
 import dji.sampleV5.aircraft.R
-import dji.sampleV5.logInfo.LogInfoActivity
-import dji.sampleV5.util.AppInfo
 import dji.sampleV5.util.DialogUtil
 import dji.sampleV5.util.FileUtil
 import dji.sampleV5.util.KmzManager
@@ -41,15 +39,12 @@ import dji.sdk.keyvalue.value.common.LocationCoordinate3D
 import dji.v5.common.callback.CommonCallbacks
 import dji.v5.common.error.IDJIError
 import dji.v5.manager.KeyManager
-import dji.v5.manager.account.LoginInfo
-import dji.v5.utils.common.LogUtils
 import dji.v5.utils.common.ToastUtils
 import dji.v5.ux.core.base.SchedulerProvider.ui
 import dji.v5.ux.core.base.widget.ConstraintLayoutWidget
 import dji.v5.ux.map.MapWidgetModel
 import dji.v5.ux.mapkit.core.models.DJILatLng
 import io.reactivex.rxjava3.disposables.Disposable
-import kotlinx.android.synthetic.main.arcgis_map_widget.view.*
 import java.util.concurrent.ExecutionException
 import kotlin.math.roundToInt
 
@@ -177,7 +172,7 @@ class ArcGISMapWidget: ConstraintLayoutWidget<Object>{
         defStyleAttr: Int
     ) {
         try {
-            inflate(context, R.layout.arcgis_map_widget, this)
+            inflate(context, R.layout.widget_arcgis_map, this)
 
             // 初始化一些变量值
             initVariable(attrs)
@@ -190,7 +185,7 @@ class ArcGISMapWidget: ConstraintLayoutWidget<Object>{
 
         }catch (e:Exception){
             ToastUtils.showToast("地图初始化异常，${e.message}")
-            LogUtils.e(TAG, "地图初始化异常，${e.message},${e.stackTraceToString()}")
+            XLog.e(TAG, "地图初始化异常，${e.message},${e.stackTraceToString()}")
         }
 
     }
@@ -209,14 +204,14 @@ class ArcGISMapWidget: ConstraintLayoutWidget<Object>{
             aircraftMarkerSymbol = PictureMarkerSymbol.createAsync(bitmapDrawable).get()
 
         }catch (e: Exception){
-            LogUtils.e(TAG, "变量初始化异常，${e.message},${e.stackTraceToString()}")
+            XLog.e(TAG, "变量初始化异常，${e.message},${e.stackTraceToString()}")
         }
 
     }
 
     @SuppressLint("ClickableViewAccessibility")
     private fun initMap(context: Context?) {
-        LogUtils.i("开始初始化arcgis地图...")
+        XLog.i("开始初始化arcgis地图...")
         ArcGISRuntimeEnvironment.setApiKey(BuildConfig.ARCGIS_API_KEY)
 //        ArcGISRuntimeEnvironment.setLicense("runtimelite,1000,rud4449636536,none,NKMFA0PL4S0DRJE15166")
 
@@ -233,7 +228,7 @@ class ArcGISMapWidget: ConstraintLayoutWidget<Object>{
         locationDisplay = mapView?.locationDisplay
         locationDisplay?.addDataSourceStatusChangedListener(DataSourceStatusChangedListener { dataSourceStatusChangedEvent ->
             if (!dataSourceStatusChangedEvent.isStarted && dataSourceStatusChangedEvent.error != null) {
-                LogUtils.e("定位权限未开启")
+                XLog.e("定位权限未开启")
             }
         })
         locationDisplay?.autoPanMode = LocationDisplay.AutoPanMode.COMPASS_NAVIGATION
@@ -270,15 +265,6 @@ class ArcGISMapWidget: ConstraintLayoutWidget<Object>{
     @SuppressLint("ClickableViewAccessibility")
     private fun initListenerEvent(context: Context, attrs: AttributeSet?){
 
-        var btnLogInfo = findViewById<Button>(R.id.btn_log_info)
-        btnLogInfo?.setOnClickListener {
-            val intent = Intent(activityContext, LogInfoActivity::class.java)
-            activityContext?.startActivity(intent)
-        }
-
-        var widgetDebugInfo = findViewById<LinearLayout>(R.id.widget_debug_info)
-        widgetDebugInfo.visibility = if (AppInfo.enabledDebug ) VISIBLE else GONE
-
         // 飞机位置更新
         KeyManager.getInstance().listen(
             KeyTools.createKey(FlightControllerKey.KeyAircraftLocation),this
@@ -301,7 +287,7 @@ class ArcGISMapWidget: ConstraintLayoutWidget<Object>{
                     }
                 }
             }catch (e: Exception){
-                LogUtils.e("飞机位置更新异常，${e.message}，${e.stackTraceToString()}")
+                XLog.e("飞机位置更新异常，${e.message}，${e.stackTraceToString()}")
             }
         }
 
@@ -318,7 +304,7 @@ class ArcGISMapWidget: ConstraintLayoutWidget<Object>{
                 )
             }catch (e:Exception){
                 ToastUtils.showToast("选择mmpk文件异常，${e.message}")
-                LogUtils.e(TAG, "选择mmpk文件异常，${e.message},${e.stackTraceToString()}")
+                XLog.e(TAG, "选择mmpk文件异常，${e.message},${e.stackTraceToString()}")
             }
 
         }
@@ -359,9 +345,9 @@ class ArcGISMapWidget: ConstraintLayoutWidget<Object>{
                             //endregion
 
                         } catch (ex: InterruptedException) {
-                            LogUtils.e(Companion.TAG,"图形选择异常：${ex.message}")
+                            XLog.e(Companion.TAG,"图形选择异常：${ex.message}")
                         } catch (ex: ExecutionException) {
-                            LogUtils.e(Companion.TAG,"图形选择异常：${ex.message}")
+                            XLog.e(Companion.TAG,"图形选择异常：${ex.message}")
                         }
                     }
 
@@ -417,7 +403,7 @@ class ArcGISMapWidget: ConstraintLayoutWidget<Object>{
                     }
                 }catch (e:Exception){
                     ToastUtils.showToast("onTouch失败，${e.message}")
-                    LogUtils.e(TAG, "onTouch异常，${e.message},${e.stackTraceToString()}")
+                    XLog.e(TAG, "onTouch异常，${e.message},${e.stackTraceToString()}")
                 }
 
                 return super.onSingleTapUp(e)
@@ -466,7 +452,7 @@ class ArcGISMapWidget: ConstraintLayoutWidget<Object>{
                 })
             }catch (e:Exception){
                 ToastUtils.showToast("航点飞行失败，${e.message}")
-                LogUtils.e(TAG, "航点飞行异常，${e.message},${e.stackTraceToString()}")
+                XLog.e(TAG, "航点飞行异常，${e.message},${e.stackTraceToString()}")
             }
 
         }
@@ -503,7 +489,7 @@ class ArcGISMapWidget: ConstraintLayoutWidget<Object>{
                 }
             }catch (e:Exception){
                 ToastUtils.showToast("删除航点失败，${e.message}")
-                LogUtils.e(TAG, "删除航点异常，${e.message},${e.stackTraceToString()}")
+                XLog.e(TAG, "删除航点异常，${e.message},${e.stackTraceToString()}")
             }
 
         }
@@ -528,7 +514,7 @@ class ArcGISMapWidget: ConstraintLayoutWidget<Object>{
                 expandMapEvent(it)
             }catch (e:Exception){
                 ToastUtils.showToast("地图最大化异常，${e.message}")
-                LogUtils.e(TAG, "地图最大化异常，${e.message},${e.stackTraceToString()}")
+                XLog.e(TAG, "地图最大化异常，${e.message},${e.stackTraceToString()}")
             }
         })
 
@@ -547,7 +533,7 @@ class ArcGISMapWidget: ConstraintLayoutWidget<Object>{
 
             }catch (e:Exception){
                 ToastUtils.showToast("导入kml失败，${e.message}")
-                LogUtils.e(TAG, "导入kml异常，${e.message},${e.stackTraceToString()}")
+                XLog.e(TAG, "导入kml异常，${e.message},${e.stackTraceToString()}")
             }
 
 
@@ -600,7 +586,7 @@ class ArcGISMapWidget: ConstraintLayoutWidget<Object>{
 
             }catch (e:Exception){
                 ToastUtils.showToast("kmz航线飞行失败，${e.message}")
-                LogUtils.e(TAG, "kmz航线飞行异常，${e.message},${e.stackTraceToString()}")
+                XLog.e(TAG, "kmz航线飞行异常，${e.message},${e.stackTraceToString()}")
             }
 
         }
@@ -611,7 +597,7 @@ class ArcGISMapWidget: ConstraintLayoutWidget<Object>{
                 kmzManager?.resumeTask()
             }catch (e:Exception){
                 ToastUtils.showToast("继续飞行失败，${e.message}")
-                LogUtils.e(TAG, "kml航线继续飞行异常，${e.message},${e.stackTraceToString()}")
+                XLog.e(TAG, "kml航线继续飞行异常，${e.message},${e.stackTraceToString()}")
             }
 
         }
@@ -622,7 +608,7 @@ class ArcGISMapWidget: ConstraintLayoutWidget<Object>{
                 kmzManager?.pauseTask()
             }catch (e:Exception){
                 ToastUtils.showToast("中止飞行失败，${e.message}")
-                LogUtils.e(TAG, "中止飞行异常，${e.message},${e.stackTraceToString()}")
+                XLog.e(TAG, "中止飞行异常，${e.message},${e.stackTraceToString()}")
             }
 
         }
@@ -638,7 +624,7 @@ class ArcGISMapWidget: ConstraintLayoutWidget<Object>{
                 mapView?.map?.operationalLayers?.clear()
             }catch (e:Exception){
                 ToastUtils.showToast("取消飞行失败，${e.message}")
-                LogUtils.e(TAG, "取消飞行异常，${e.message},${e.stackTraceToString()}")
+                XLog.e(TAG, "取消飞行异常，${e.message},${e.stackTraceToString()}")
             }
 
         }
@@ -681,7 +667,7 @@ class ArcGISMapWidget: ConstraintLayoutWidget<Object>{
                 })
         }catch (e:Exception){
             ToastUtils.showToast("reactToModelChanges异常，${e.message}")
-            LogUtils.e(TAG, "reactToModelChanges异常，${e.message},${e.stackTraceToString()}")
+            XLog.e(TAG, "reactToModelChanges异常，${e.message},${e.stackTraceToString()}")
         }
 
     }
@@ -866,7 +852,7 @@ class ArcGISMapWidget: ConstraintLayoutWidget<Object>{
         kmlDataset.addDoneLoadingListener {
             if(kmlDataset.loadStatus != LoadStatus.LOADED){
                 ToastUtils.showToast("kml 文件加载失败，${kmlDataset.loadError.cause!!.message}")
-                LogUtils.e(Companion.TAG, "kml 文件加载失败，${kmlDataset.loadError.cause!!.message}")
+                XLog.e(Companion.TAG, "kml 文件加载失败，${kmlDataset.loadError.cause!!.message}")
             }else{
                 widgetFlightMainMenu?.visibility = GONE
                 widgetKmzFlightMenu?.visibility = VISIBLE
@@ -907,7 +893,7 @@ class ArcGISMapWidget: ConstraintLayoutWidget<Object>{
                 ToastUtils.showToast("地图加载成功！")
             } else {
                 ToastUtils.showToast("地图加载失败，mapPackage.loadError.message")
-                LogUtils.e(mapPackage.loadError.message)
+                XLog.e(mapPackage.loadError.message)
             }
         }
 
@@ -915,11 +901,5 @@ class ArcGISMapWidget: ConstraintLayoutWidget<Object>{
 
     //endregion
 
-    public fun showEnableDebug(): kotlin.Unit{
-
-        var widgetDebug = findViewById<LinearLayout>(R.id.widget_debug_info)
-
-        widgetDebug.visibility =  if(AppInfo.enabledDebug) VISIBLE else GONE
-    }
 }
 

@@ -8,14 +8,19 @@ import android.os.Bundle
 import android.view.View
 import android.view.ViewStub
 import android.view.WindowManager
+import android.widget.Button
 import android.widget.ImageButton
+import android.widget.LinearLayout
 import androidx.activity.viewModels
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.view.GravityCompat
 import androidx.drawerlayout.widget.DrawerLayout
+import com.elvishew.xlog.XLog
+import dji.sampleV5.logInfo.LogInfoActivity
 import dji.sampleV5.map.ArcGISMapWidget
 import dji.sampleV5.moduleaircraft.models.WayPointV3VM
 import dji.sampleV5.modulecommon.util.DensityUtil
+import dji.sampleV5.util.AppInfo
 import dji.sampleV5.util.FileUtil
 import dji.sampleV5.util.KmzManager
 import dji.sampleV5.util.ResizeAnimation
@@ -28,14 +33,7 @@ import dji.v5.common.video.stream.StreamSource
 import dji.v5.manager.account.LoginInfo
 import dji.v5.manager.datacenter.MediaDataCenter
 import dji.v5.utils.common.JsonUtil
-import dji.v5.utils.common.LogUtils
 import dji.v5.utils.common.ToastUtils
-import dji.v5.ux.cameracore.widget.autoexposurelock.AutoExposureLockWidget
-import dji.v5.ux.cameracore.widget.cameracontrols.CameraControlsWidget
-import dji.v5.ux.cameracore.widget.cameracontrols.exposuresettings.ExposureSettingsPanel
-import dji.v5.ux.cameracore.widget.cameracontrols.lenscontrol.LensControlWidget
-import dji.v5.ux.cameracore.widget.focusexposureswitch.FocusExposureSwitchWidget
-import dji.v5.ux.cameracore.widget.focusmode.FocusModeWidget
 import dji.v5.ux.cameracore.widget.fpvinteraction.FPVInteractionWidget
 import dji.v5.ux.core.base.SchedulerProvider.computation
 import dji.v5.ux.core.extension.hide
@@ -66,7 +64,10 @@ open class MainSdkActivity : InitSdkActivity(){
 
     //region 属性
 
-    private val TAG = LogUtils.getTag(this)
+    private val TAG = "MainSdkActivity"
+
+    private  var widgetDebug:LinearLayout? = null
+    private var btnLogInfo: ImageButton? = null
 
     private var primaryFpvWidget: FPVWidget? = null
     private var fpvInteractionWidget: FPVInteractionWidget? = null
@@ -146,6 +147,10 @@ open class MainSdkActivity : InitSdkActivity(){
                 simulatorIndicatorWidget.stateChangeCallback =
                     findViewById(R.id.widget_simulator_control)
             }
+
+            widgetDebug = findViewById(R.id.widget_debug_info)
+            btnLogInfo = findViewById(R.id.btn_log_info)
+
             mDrawerLayout = findViewById(R.id.root_view)
             settingWidget = topBarPanel.settingWidget
             primaryFpvWidget = findViewById(R.id.widget_primary_fpv)
@@ -166,7 +171,6 @@ open class MainSdkActivity : InitSdkActivity(){
             kmzManager?.setDrawLineEvent { points: List<com.esri.arcgisruntime.geometry.Point> -> mapWidget?.addPolyline(points) }
             mapWidget?.kmzManager = kmzManager
 
-            modifyUserType = { mapWidget?.showEnableDebug() }
 
             selectFileListener = mapWidget?.selectFileListenerEvent!!
             MediaDataCenter.getInstance().videoStreamManager.addStreamSourcesListener { sources: List<StreamSource>? ->
@@ -179,7 +183,7 @@ open class MainSdkActivity : InitSdkActivity(){
                     devicePosition: PhysicalDevicePosition,
                     lensType: CameraLensType
                 ) {
-                    LogUtils.i(TAG, devicePosition, lensType)
+                    XLog.i(TAG, devicePosition, lensType)
                     cameraSourceProcessor.onNext(CameraSource(devicePosition, lensType))
                 }
             })
@@ -190,8 +194,9 @@ open class MainSdkActivity : InitSdkActivity(){
             mapWidget?.setActiveContext(this)
 
         }catch (e:Exception){
+            XLog.e(TAG, "页面初始化异常，${e.message}，${e.stackTraceToString()}")
             ToastUtils.showToast("页面初始化异常，${e.message}")
-            LogUtils.e(TAG, "页面初始化异常，${e.message}，${e.stackTraceToString()}")
+
         }
 
     }
@@ -229,8 +234,9 @@ open class MainSdkActivity : InitSdkActivity(){
                 }
             )
         }catch (e:Exception){
+            XLog.e(TAG, "onResume异常，${e.message},${e.stackTraceToString()}")
             ToastUtils.showToast("onResume异常，${e.message}")
-            LogUtils.e(TAG, "onResume异常，${e.message},${e.stackTraceToString()}")
+
         }
 
     }
@@ -244,8 +250,8 @@ open class MainSdkActivity : InitSdkActivity(){
             mapWidget?.onPause()
             super.onPause()
         }catch (e:Exception){
+            XLog.e(TAG, "onPause异常，${e.message},${e.stackTraceToString()}")
             ToastUtils.showToast("onPause异常，${e.message}")
-            LogUtils.e(TAG, "onPause异常，${e.message},${e.stackTraceToString()}")
         }
 
     }
@@ -258,8 +264,9 @@ open class MainSdkActivity : InitSdkActivity(){
             MediaDataCenter.getInstance().videoStreamManager.clearAllStreamSourcesListeners()
             removeChannelStateListener()
         }catch (e:Exception){
+
+            XLog.e(TAG, "onDestroy异常，${e.message},${e.stackTraceToString()}")
             ToastUtils.showToast("onDestroy异常，${e.message}")
-            LogUtils.e(TAG, "onDestroy异常，${e.message},${e.stackTraceToString()}")
         }
     }
 
@@ -267,11 +274,17 @@ open class MainSdkActivity : InitSdkActivity(){
 
     //region 事件初始化
     private fun initClickListener() {
+
+        btnLogInfo?.setOnClickListener {
+            val intent = Intent(this, LogInfoActivity::class.java)
+            startActivity(intent)
+        }
+
         secondaryFPVWidget?.setOnClickListener { v: View? ->
             try{
                 swapVideoSource()
             }catch (e:Exception){
-                LogUtils.e(TAG, "secondaryFPVClick异常，${e.message}, ${e.stackTraceToString()}")
+                XLog.e(TAG, "secondaryFPVClick异常，${e.message}, ${e.stackTraceToString()}")
             }
         }
 
@@ -281,8 +294,9 @@ open class MainSdkActivity : InitSdkActivity(){
             try{
                 toggleRightDrawer()
             }catch (e:Exception){
+                XLog.e(TAG, "打开设置异常，${e.message}, ${e.stackTraceToString()}")
                 ToastUtils.showToast("打开设置错误，${e.message}")
-                LogUtils.e(TAG, "打开设置异常，${e.message}, ${e.stackTraceToString()}")
+
             }
         }
 
@@ -290,8 +304,9 @@ open class MainSdkActivity : InitSdkActivity(){
             try{
                 onViewClick(mapWidget!!)
             }catch (e: Exception){
+                XLog.e(TAG, "展开地图异常，${e.message}, ${e.stackTraceToString()}")
                 ToastUtils.showToast("展开地图错误，${e.message}")
-                LogUtils.e(TAG, "展开地图异常，${e.message}, ${e.stackTraceToString()}")
+
             }
         }
 
@@ -299,8 +314,9 @@ open class MainSdkActivity : InitSdkActivity(){
             try{
                 onViewClick(fpvLayout!!)
             }catch (e: Exception){
+                XLog.e(TAG, "展开视图窗口错误，${e.message}, ${e.stackTraceToString()}")
                 ToastUtils.showToast("展开视图窗口错误，${e.message}")
-                LogUtils.e(TAG, "展开视图窗口错误，${e.message}, ${e.stackTraceToString()}")
+
             }
         }
 
@@ -319,12 +335,7 @@ open class MainSdkActivity : InitSdkActivity(){
     }
 
 
-    /**
-     * 用户信息加载
-     */
-    override fun loadAccountInfo(accountInfo: LoginInfo?) {
 
-    }
 
     private fun hideOtherPanels(widget: View?) {
         val panels = arrayOf<View?>(
@@ -338,7 +349,7 @@ open class MainSdkActivity : InitSdkActivity(){
     }
 
     private fun updateFPVWidgetSource(streamSources: List<StreamSource>?) {
-        LogUtils.i(TAG, JsonUtil.toJson(streamSources))
+        XLog.i(TAG, JsonUtil.toJson(streamSources))
         if (streamSources == null) {
             return
         }
@@ -401,8 +412,9 @@ open class MainSdkActivity : InitSdkActivity(){
                 secondaryChannel.addVideoChannelStateChangeListener(secondaryChannelStateListener)
             }
         }catch (e: Exception){
+            XLog.e(TAG, "视频初始化错误，${e.message}, ${e.stackTraceToString()}")
             ToastUtils.showToast("视频初始化错误，${e.message}")
-            LogUtils.e(TAG, "视频初始化错误，${e.message}, ${e.stackTraceToString()}")
+
         }
     }
 
@@ -423,7 +435,7 @@ open class MainSdkActivity : InitSdkActivity(){
         devicePosition: PhysicalDevicePosition,
         lensType: CameraLensType?
     ) {
-        LogUtils.i(TAG, "onCameraSourceUpdated", devicePosition, lensType)
+        XLog.i(TAG, "onCameraSourceUpdated", devicePosition, lensType)
         val cameraIndex = CameraUtil.getCameraIndex(devicePosition)
         fpvInteractionWidget!!.updateCameraSource(cameraIndex, lensType!!)
         fpvInteractionWidget!!.updateGimbalIndex(CommonUtils.getGimbalIndex(devicePosition))
@@ -566,12 +578,13 @@ open class MainSdkActivity : InitSdkActivity(){
                 (Manifest.permission.ACCESS_COARSE_LOCATION !in permissions)) {
 
                 ToastUtils.showToast("定位未开启或没有权限")
-                LogUtils.e("定位权限未开启")
+                XLog.w("定位权限未开启")
 
             }
         }catch (e:Exception){
+            XLog.e(TAG, "权限检查异常，${e.message},${e.stackTraceToString()}")
             ToastUtils.showToast("权限检查异常，${e.message}")
-            LogUtils.e(TAG, "权限检查异常，${e.message},${e.stackTraceToString()}")
+
         }
 
     }
@@ -588,16 +601,22 @@ open class MainSdkActivity : InitSdkActivity(){
             if(resultCode == RESULT_OK){
                 var uri = data?.data
                 var path = FileUtil.getFileAbsolutePath(context, uri!!)
-                LogUtils.d(TAG,"已选择文件：${path}")
+                XLog.d(TAG,"已选择文件：${path}")
                 selectFileListener(path!!, requestCode)
 
             }
         }catch (e:Exception){
+            XLog.e(TAG, "文件选择异常，${e.message},${e.stackTraceToString()}")
             ToastUtils.showToast("文件选择异常，${e.message}")
-            LogUtils.e(TAG, "文件选择异常，${e.message},${e.stackTraceToString()}")
+
         }
 
     }
 
     //endregion
+
+    override fun userInfoUpdate(userInfo: LoginInfo?) {
+        AppInfo.setUserInfo(userInfo)
+        widgetDebug?.visibility =  if(AppInfo.enabledDebug) ConstraintLayout.VISIBLE else ConstraintLayout.GONE
+    }
 }

@@ -21,6 +21,8 @@ import com.elvishew.xlog.printer.file.FilePrinter
 import com.elvishew.xlog.printer.file.backup.NeverBackupStrategy
 import com.elvishew.xlog.printer.file.clean.FileLastModifiedCleanStrategy
 import com.elvishew.xlog.printer.file.naming.DateFileNameGenerator
+import dji.sampleV5.logInfo.LogBorderFormatter
+import dji.sampleV5.logInfo.LogFlattener
 import dji.sampleV5.modulecommon.models.LoginVM
 import dji.sampleV5.util.AppInfo
 import dji.sampleV5.util.FileUtil
@@ -35,6 +37,8 @@ import dji.v5.utils.common.ToastUtils
 import dji.v5.ux.core.base.DJISDKModel
 import dji.v5.ux.core.communication.ObservableInMemoryKeyedStore
 import dji.v5.ux.map.MapWidgetModel
+import java.io.File
+import kotlin.math.log
 
 
 /**
@@ -49,8 +53,7 @@ abstract class InitSdkActivity : AppCompatActivity(){
 
     protected var userInfo: LoginInfo? = null
 
-    // 用户类型修改[调试；普通]
-    public lateinit var  modifyUserType: () -> Unit
+    abstract fun userInfoUpdate(userInfo: LoginInfo?)
 
     private val permissionArray = arrayOf(
         Manifest.permission.READ_EXTERNAL_STORAGE,
@@ -84,16 +87,16 @@ abstract class InitSdkActivity : AppCompatActivity(){
 
     private fun initLog(){
 
+        var logDir = File(AppInfo.LOG_FILE_PATH)
+        if(logDir.exists()) logDir.deleteRecursively()
+        logDir.mkdirs()
+
         val filePrinter: Printer = FilePrinter.Builder(AppInfo.LOG_FILE_PATH) // 指定保存日志文件的路径
             .fileNameGenerator(DateFileNameGenerator()) // 指定日志文件名生成器，默认为 ChangelessFileNameGenerator("log")
             .backupStrategy(NeverBackupStrategy()) // 指定日志文件备份策略，默认为 FileSizeBackupStrategy(1024 * 1024)
             .cleanStrategy(FileLastModifiedCleanStrategy(3 * 1024 * 1024)) // 指定日志文件清除策略，默认为 NeverCleanStrategy()
-            .flattener(PatternFlattener("{d yyyy-MM-dd HH:mm:ss} {L}/{t}: {m}")) // 指定日志平铺器，默认为 DefaultFlattener
+            .flattener(LogFlattener()) // 指定日志平铺器，默认为 DefaultFlattener
             .build()
-
-
-        var androidPrinter = AndroidPrinter(true);
-        var consolePrinter = ConsolePrinter()
 
 
         var logConfig = LogConfiguration.Builder()
@@ -101,9 +104,10 @@ abstract class InitSdkActivity : AppCompatActivity(){
             .jsonFormatter(DefaultJsonFormatter())
             .tag("无人机外业巡检")
             .enableBorder()
+            .borderFormatter(LogBorderFormatter())
             .build()
 
-        XLog.init(logConfig, androidPrinter, consolePrinter, filePrinter);
+        XLog.init(logConfig,AndroidPrinter(true), filePrinter);
     }
 
 
@@ -234,14 +238,7 @@ abstract class InitSdkActivity : AppCompatActivity(){
 
                     // 刷新用户信息
                     userInfo = it
-
-                    AppInfo.setUserInfo(it)
-
-                    modifyUserType()
-
-                    // 加载用户信息
-                    loadAccountInfo(it)
-
+                    userInfoUpdate(it)
                 }
             }
         }
@@ -310,8 +307,4 @@ abstract class InitSdkActivity : AppCompatActivity(){
         return userInfo?.account;
     }
 
-    /**
-     * 初始化账户信息
-     */
-    abstract fun loadAccountInfo(accountInfo:LoginInfo?)
 }

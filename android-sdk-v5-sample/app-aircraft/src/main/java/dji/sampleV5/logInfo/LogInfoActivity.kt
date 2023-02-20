@@ -2,6 +2,7 @@ package dji.sampleV5.logInfo
 
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
+import android.text.method.ScrollingMovementMethod
 import android.widget.Button
 import android.widget.TextView
 import dji.sampleV5.aircraft.R
@@ -33,6 +34,7 @@ class LogInfoActivity : AppCompatActivity() {
         val s: MutableList<String> = ArrayList()
 
         var txtWidget = findViewById<TextView>(R.id.txt_log_info)
+        txtWidget.movementMethod = ScrollingMovementMethod.getInstance()
         for (i in files.indices) {
             s.add(files[i].name)
             txtWidget.append(files[i].readText())
