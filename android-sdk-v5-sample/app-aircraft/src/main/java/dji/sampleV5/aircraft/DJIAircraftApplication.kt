@@ -12,7 +12,6 @@ import dji.sampleV5.modulecommon.DJIApplication
  * Copyright (c) 2022, DJI All Rights Reserved.
  */
 class DJIAircraftApplication : DJIApplication() {
-
     override fun attachBaseContext(base: Context?) {
         super.attachBaseContext(base)
         com.secneo.sdk.Helper.install(this)

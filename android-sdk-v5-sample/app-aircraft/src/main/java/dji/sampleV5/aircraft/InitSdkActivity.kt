@@ -5,25 +5,37 @@ import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
 import android.text.TextUtils
-
 import android.view.View
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
-import dji.sampleV5.moduleaircraft.models.WayPointV3VM
+import com.elvishew.xlog.LogConfiguration
+import com.elvishew.xlog.LogLevel
+import com.elvishew.xlog.XLog
+import com.elvishew.xlog.flattener.PatternFlattener
+import com.elvishew.xlog.formatter.message.json.DefaultJsonFormatter
+import com.elvishew.xlog.printer.AndroidPrinter
+import com.elvishew.xlog.printer.ConsolePrinter
+import com.elvishew.xlog.printer.Printer
+import com.elvishew.xlog.printer.file.FilePrinter
+import com.elvishew.xlog.printer.file.backup.NeverBackupStrategy
+import com.elvishew.xlog.printer.file.clean.FileLastModifiedCleanStrategy
+import com.elvishew.xlog.printer.file.naming.DateFileNameGenerator
 import dji.sampleV5.modulecommon.models.LoginVM
+import dji.sampleV5.util.AppInfo
+import dji.sampleV5.util.FileUtil
 import dji.v5.common.callback.CommonCallbacks
 import dji.v5.common.error.IDJIError
 import dji.v5.common.register.DJISDKInitEvent
 import dji.v5.manager.SDKManager
 import dji.v5.manager.account.LoginInfo
 import dji.v5.manager.interfaces.SDKManagerCallback
-import dji.v5.utils.common.LogUtils
 import dji.v5.utils.common.PermissionUtil
 import dji.v5.utils.common.ToastUtils
 import dji.v5.ux.core.base.DJISDKModel
 import dji.v5.ux.core.communication.ObservableInMemoryKeyedStore
 import dji.v5.ux.map.MapWidgetModel
+
 
 /**
  * MSDK 注册激活
@@ -34,8 +46,11 @@ abstract class InitSdkActivity : AppCompatActivity(){
     protected  val  loginTag: String = "登录"
     protected val loginVM: LoginVM by viewModels()
     var mainHandler = Handler(Looper.getMainLooper())
-    open var userInfo: LoginInfo? = null
 
+    protected var userInfo: LoginInfo? = null
+
+    // 用户类型修改[调试；普通]
+    public lateinit var  modifyUserType: () -> Unit
 
     private val permissionArray = arrayOf(
         Manifest.permission.READ_EXTERNAL_STORAGE,
@@ -48,8 +63,11 @@ abstract class InitSdkActivity : AppCompatActivity(){
     )
 
     override fun onCreate(savedInstanceState: Bundle?) {
+
         super.onCreate(savedInstanceState)
         ToastUtils.init(this)
+
+        initLog()
 
         window.decorView.apply {
             systemUiVisibility =
@@ -58,8 +76,34 @@ abstract class InitSdkActivity : AppCompatActivity(){
         }
         // 许可检查及sdk初始化
         checkPermissionAndRequest()
+
         // 用户登录状态初始化，必须先登录
         initLoginState()
+
+    }
+
+    private fun initLog(){
+
+        val filePrinter: Printer = FilePrinter.Builder(AppInfo.LOG_FILE_PATH) // 指定保存日志文件的路径
+            .fileNameGenerator(DateFileNameGenerator()) // 指定日志文件名生成器，默认为 ChangelessFileNameGenerator("log")
+            .backupStrategy(NeverBackupStrategy()) // 指定日志文件备份策略，默认为 FileSizeBackupStrategy(1024 * 1024)
+            .cleanStrategy(FileLastModifiedCleanStrategy(3 * 1024 * 1024)) // 指定日志文件清除策略，默认为 NeverCleanStrategy()
+            .flattener(PatternFlattener("{d yyyy-MM-dd HH:mm:ss} {L}/{t}: {m}")) // 指定日志平铺器，默认为 DefaultFlattener
+            .build()
+
+
+        var androidPrinter = AndroidPrinter(true);
+        var consolePrinter = ConsolePrinter()
+
+
+        var logConfig = LogConfiguration.Builder()
+            .logLevel(LogLevel.ALL)
+            .jsonFormatter(DefaultJsonFormatter())
+            .tag("无人机外业巡检")
+            .enableBorder()
+            .build()
+
+        XLog.init(logConfig, androidPrinter, consolePrinter, filePrinter);
     }
 
 
@@ -78,7 +122,7 @@ abstract class InitSdkActivity : AppCompatActivity(){
     }
 
     private fun handleAfterPermissionPermitted() {
-        LogUtils.i("开始注册App...")
+        XLog.i("开始注册App...")
         registerApp()
     }
 
@@ -86,37 +130,37 @@ abstract class InitSdkActivity : AppCompatActivity(){
     private fun registerApp(){
         SDKManager.getInstance().init(this, object : SDKManagerCallback {
             override fun onRegisterSuccess() {
-                LogUtils.i(tag, "注册成功!")
+                XLog.i(tag, "注册成功!")
                 ToastUtils.showToast("注册成功")
             }
 
             override fun onRegisterFailure(error: IDJIError?) {
-                LogUtils.i(tag, "注册失败: (错误代码: ${error?.errorCode()}, 原因: ${error?.description()})")
+                XLog.i(tag, "注册失败: (错误代码: ${error?.errorCode()}, 原因: ${error?.description()})")
                 ToastUtils.showToast("注册失败: (errorCode: ${error?.errorCode()}, 原因: ${error?.description()})")
             }
 
             override fun onProductDisconnect(product: Int) {
-                LogUtils.i(tag, "设备: $product 断开连接")
+                XLog.i(tag, "设备: $product 断开连接")
                 ToastUtils.showToast("设备: $product 断开连接")
             }
 
             override fun onProductConnect(product: Int) {
-                LogUtils.i(tag, "设备: $product 已连接")
+                XLog.i(tag, "设备: $product 已连接")
                 ToastUtils.showToast("设备: $product 已连接")
             }
 
             override fun onProductChanged(product: Int) {
-                LogUtils.i(tag, "设备: $product 改变")
+                XLog.i(tag, "设备: $product 改变")
                 ToastUtils.showToast("设备: $product 改变")
             }
 
             override fun onInitProcess(event: DJISDKInitEvent?, totalProcess: Int) {
-                LogUtils.i(tag, "初始化: ${event?.name}")
+                XLog.i(tag, "初始化: ${event?.name}")
                 ToastUtils.showToast("初始化: ${event?.name}")
             }
 
             override fun onDatabaseDownloadProgress(current: Long, total: Long) {
-                LogUtils.i(tag, "Database Download Progress current: $current, total: $total")
+                XLog.i(tag, "Database Download Progress current: $current, total: $total")
                 ToastUtils.showToast("Database Download Progress current: $current, total: $total")
             }
         })
@@ -191,6 +235,10 @@ abstract class InitSdkActivity : AppCompatActivity(){
                     // 刷新用户信息
                     userInfo = it
 
+                    AppInfo.setUserInfo(it)
+
+                    modifyUserType()
+
                     // 加载用户信息
                     loadAccountInfo(it)
 
@@ -204,7 +252,7 @@ abstract class InitSdkActivity : AppCompatActivity(){
         }else{
             ToastUtils.showToast("${getAccountName()}登录成功!")
 
-            LogUtils.i(loginTag, "${getAccountName()}登录成功!")
+            XLog.i(loginTag, "${getAccountName()}登录成功!")
         }
 
     }
@@ -217,13 +265,13 @@ abstract class InitSdkActivity : AppCompatActivity(){
             override fun onSuccess() {
                 ToastUtils.showToast("${getAccountName()}登录成功!")
 
-                LogUtils.i(loginTag, "${getAccountName()}登录成功!")
+                XLog.i(loginTag, "${getAccountName()}登录成功!")
             }
 
             override fun onFailure(error: IDJIError) {
                 ToastUtils.showToast("登录失败: $error")
 
-                LogUtils.e(loginTag, "登录失败：${error}")
+                XLog.e(loginTag, "登录失败：${error}")
             }
 
         })
@@ -237,13 +285,13 @@ abstract class InitSdkActivity : AppCompatActivity(){
             override fun onSuccess() {
                 ToastUtils.showToast("${getAccountName()}登录成功!")
 
-                LogUtils.i(loginTag, "${getAccountName()}登录成功!")
+                XLog.i(loginTag, "${getAccountName()}登录成功!")
             }
 
             override fun onFailure(error: IDJIError) {
                 ToastUtils.showToast("登录失败: $error")
 
-                LogUtils.e(loginTag, "登录失败：${error}")
+                XLog.e(loginTag, "登录失败：${error}")
             }
 
         })

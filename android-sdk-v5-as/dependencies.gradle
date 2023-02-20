@@ -28,6 +28,8 @@ ext {
     deps.maplibreSdk = 'org.maplibre.gl:android-sdk:9.4.2'
     deps.lottie = 'com.airbnb.android:lottie:3.3.1'//RTK扫描页中使用，用于实现动画效果
     deps.cardview = 'androidx.cardview:cardview:1.0.0'//PopoverView中使用
+    deps.xlog = 'com.elvishew:xlog:1.10.1'
+
     /*RTK设置页面使用-start*/
     deps.mikepenzCommunityMaterial = "com.mikepenz:community-material-typeface:3.5.95.1-kotlin@aar"
     deps.mikepenzGoogleMaterial = 'com.mikepenz:google-material-typeface:3.0.1.4.original-kotlin@aar'

@@ -1,6 +1,7 @@
 package dji.sampleV5.util
 
 import android.annotation.SuppressLint
+import android.app.Application
 import android.content.ContentResolver
 import android.content.ContentUris
 import android.content.Context
@@ -9,11 +10,14 @@ import android.net.Uri
 import android.os.Build
 import android.os.Environment
 import android.os.FileUtils
+import android.provider.ContactsContract.Directory
 import android.provider.DocumentsContract
 import android.provider.MediaStore
 import android.provider.OpenableColumns
 import android.webkit.MimeTypeMap
 import androidx.annotation.RequiresApi
+import dji.sampleV5.aircraft.R
+import dji.v5.utils.common.ContextUtil
 import dji.v5.utils.common.FileUtils.*
 import java.io.File
 import java.io.FileOutputStream
@@ -27,6 +31,30 @@ object FileUtil {
 
     const val MmpkSelectRequestCode: Int = 1
 
+    //region app根目录
+
+    /*
+	 * 获得移动终端的内置存储卡路径
+	 */
+    private fun getInternalMemoryPath(): String? {
+        return if (Environment.getExternalStorageState() == Environment.MEDIA_MOUNTED) Environment.getExternalStorageDirectory().path else ""
+    }
+
+    fun getAppRootPath(): String? {
+        var pathName = getInternalMemoryPath()
+        var path = pathName + File.separator +  ContextUtil.getContext().getString(R.string.app_name)
+
+        var rootFile = File(path)
+
+        if (!rootFile.exists()) rootFile.mkdirs()
+
+        return path
+    }
+
+    //endregion
+
+
+    //region 文件真实路径获取
 
     /**
      * 根据Uri获取文件绝对路径，解决Android4.4以上版本Uri转换 兼容Android 10
@@ -251,7 +279,6 @@ object FileUtil {
         return file!!.absolutePath
     }
 
-
     /**
      * 通过文件路径 uri的转字符也可以
      * @param filePath
@@ -261,5 +288,7 @@ object FileUtil {
         val ext = MimeTypeMap.getFileExtensionFromUrl(filePath)
         return MimeTypeMap.getSingleton().getMimeTypeFromExtension(ext)
     }
+
+    //endregion
 
 }

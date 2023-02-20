@@ -165,6 +165,9 @@ open class MainSdkActivity : InitSdkActivity(){
             kmzManager = KmzManager(wayPointV3VM, this)
             kmzManager?.setDrawLineEvent { points: List<com.esri.arcgisruntime.geometry.Point> -> mapWidget?.addPolyline(points) }
             mapWidget?.kmzManager = kmzManager
+
+            modifyUserType = { mapWidget?.showEnableDebug() }
+
             selectFileListener = mapWidget?.selectFileListenerEvent!!
             MediaDataCenter.getInstance().videoStreamManager.addStreamSourcesListener { sources: List<StreamSource>? ->
                 runOnUiThread { updateFPVWidgetSource(sources) }

@@ -42,18 +42,15 @@ class KmzManager{
     private var viewLifecycleOwner: LifecycleOwner? =  null
 
     private val WAYPOINT_SAMPLE_FILE_NAME: String = "waypointsample.kmz"
-    private val WAYPOINT_SAMPLE_FILE_DIR: String = "waypoint/"
     private val WAYPOINT_SAMPLE_FILE_CACHE_DIR: String = "waypoint/cache/"
     private val WAYPOINT_FILE_TAG = ".kmz"
     private var unzipChildDir = "temp/"
     private var unzipDir = "wpmz/"
 
-    private val rootDir = DiskUtil.getExternalCacheDirPath(ContextUtil.getContext(), WAYPOINT_SAMPLE_FILE_DIR)
+    private val rootDir = AppInfo.WAYPOINT_ROOT_DIR
+
     // 当前航线文件路径
-    var curMissionPath: String = DiskUtil.getExternalCacheDirPath(
-        ContextUtil.getContext(),
-        WAYPOINT_SAMPLE_FILE_DIR + WAYPOINT_SAMPLE_FILE_NAME
-    )
+    var curMissionPath: String =  AppInfo.WAYPOINT_ROOT_DIR + File.separator + WAYPOINT_SAMPLE_FILE_NAME
 
     // 模板文件
     private var templateFilePath: String = ""

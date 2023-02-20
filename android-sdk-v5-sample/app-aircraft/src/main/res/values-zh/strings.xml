@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">无人机外业巡检</string>
+    <string name="uxsdk_log_info">系统日志</string>
+    <string name="uxsdk_return">返回</string>
+</resources>

@@ -27,7 +27,10 @@ import com.esri.arcgisruntime.symbology.PictureMarkerSymbol
 import com.esri.arcgisruntime.symbology.SimpleLineSymbol
 import com.esri.arcgisruntime.symbology.SimpleMarkerSymbol
 import dji.sampleV5.aircraft.BuildConfig
+import dji.sampleV5.aircraft.InitSdkActivity
 import dji.sampleV5.aircraft.R
+import dji.sampleV5.logInfo.LogInfoActivity
+import dji.sampleV5.util.AppInfo
 import dji.sampleV5.util.DialogUtil
 import dji.sampleV5.util.FileUtil
 import dji.sampleV5.util.KmzManager
@@ -38,6 +41,7 @@ import dji.sdk.keyvalue.value.common.LocationCoordinate3D
 import dji.v5.common.callback.CommonCallbacks
 import dji.v5.common.error.IDJIError
 import dji.v5.manager.KeyManager
+import dji.v5.manager.account.LoginInfo
 import dji.v5.utils.common.LogUtils
 import dji.v5.utils.common.ToastUtils
 import dji.v5.ux.core.base.SchedulerProvider.ui
@@ -265,6 +269,15 @@ class ArcGISMapWidget: ConstraintLayoutWidget<Object>{
      */
     @SuppressLint("ClickableViewAccessibility")
     private fun initListenerEvent(context: Context, attrs: AttributeSet?){
+
+        var btnLogInfo = findViewById<Button>(R.id.btn_log_info)
+        btnLogInfo?.setOnClickListener {
+            val intent = Intent(activityContext, LogInfoActivity::class.java)
+            activityContext?.startActivity(intent)
+        }
+
+        var widgetDebugInfo = findViewById<LinearLayout>(R.id.widget_debug_info)
+        widgetDebugInfo.visibility = if (AppInfo.enabledDebug ) VISIBLE else GONE
 
         // 飞机位置更新
         KeyManager.getInstance().listen(
@@ -901,5 +914,12 @@ class ArcGISMapWidget: ConstraintLayoutWidget<Object>{
     }
 
     //endregion
+
+    public fun showEnableDebug(): kotlin.Unit{
+
+        var widgetDebug = findViewById<LinearLayout>(R.id.widget_debug_info)
+
+        widgetDebug.visibility =  if(AppInfo.enabledDebug) VISIBLE else GONE
+    }
 }
 
